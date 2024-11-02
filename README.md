@@ -54,6 +54,9 @@ node server.js
 * Setup database
 
 ```
+sudo apt install mariadb-server
+```
+```
 sudo mysql -u root -p
 ```
 
