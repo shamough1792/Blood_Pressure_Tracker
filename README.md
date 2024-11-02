@@ -102,6 +102,11 @@ const db = mysql.createConnection({
 
 * Replace the Your_Password with your password.
 
+<br>
+
+```
+const port = 3000;
+```
 * Default Port of the website is 3000.
 
 <br><br>
