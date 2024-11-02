@@ -116,7 +116,9 @@ const port = 3000;
 
 ## Screenshot Of The Website
 
+![Alt Text](images/index.png)
 
+![Alt Text](images/record.png)
 
 <br>
 
