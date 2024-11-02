@@ -135,7 +135,11 @@ const port = 3000;
 <br>
 
 * 0.1
-    * Initial Release
+    * Initial Release.
+
+* 0.2
+    * Update UI.
+    * Adding pop up when successful add new record.
 
 <br>
 
