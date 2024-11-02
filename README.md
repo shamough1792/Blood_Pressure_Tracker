@@ -2,11 +2,15 @@
 
 <br>
 
-
+Blood Pressure Recording Website.
 
 <br><br>
 
 ## Description
+
+<br>
+
+The Blood Pressure Tracker is a web application built using Node.js and MariaDB. This application allows users to easily record, track, and view their blood pressure data over time. Users can input their blood pressure measurements, including high pressure, low pressure, and heart rate. The readings are automatically timestamped and stored in the database. Users can then view their past blood pressure readings in a chronological order, with each entry displayed in a user-friendly format.
 
 <br>
 
@@ -20,15 +24,16 @@
 
 ### Dependencies
 
-* 
-* 
+* Linux
+* Node.js version >= 20.16.0
+* MySql >= 15.1 Distrib 10.6.10-MariaDB
 
 <br>
 
 ### Installing
 
-* Download the source from latest release.
-* Create new folder to contain 
+* Download the file from latest release.
+* Create new folder to contain all the file from release.
 
 <br>
 
@@ -50,9 +55,68 @@ node server.js
 
 <br>
 
+* Setup database
+
+```
+sudo mysql -u root -p
+```
+
+```
+CREATE USER 'tracker_user'@'localhost' IDENTIFIED BY 'Your_Password';
+```
+
+```
+CREATE DATABASE blood_pressure_tracker;
+```
+
+```
+USE blood_pressure_tracker;
+```
+
+```
+CREATE TABLE records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    high_pressure INT NOT NULL,
+    low_pressure INT NOT NULL,
+    heartbeat INT NOT NULL,
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+```
+GRANT ALL PRIVILEGES ON blood_pressure_tracker.* TO 'tracker_user'@'localhost';
+```
+
+* Replace the Your_Password with your password.
 
 
 <br><br>
+
+* Setup server.js
+
+```
+// Database connection
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'tracker_user', // replace with your MariaDB username
+    password: 'Your_Password', // replace with your MariaDB password
+    database: 'blood_pressure_tracker'
+});
+ ```
+
+* Replace the Your_Password with your password.
+
+* Default Port of the website is 3000.
+
+<br><br>
+
+## Screenshot Of The Website
+
+![Alt Text](images/index.png)
+
+![Alt Text](images/record.png)
+
+<br>
 
 ## Authors
 
