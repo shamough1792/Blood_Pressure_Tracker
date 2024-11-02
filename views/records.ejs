@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>血壓記錄</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css"> <!-- Custom CSS -->
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="text-center">血壓記錄</h1>
+        <table class="table table-striped mt-4">
+            <thead class="thead-dark">
+                <tr>
+                    <th>高壓</th>
+                    <th>低壓</th>
+                    <th>心跳</th>
+                    <th>記錄時間</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% records.forEach(record => { %>
+                    <tr>
+                        <td><%= record.high_pressure %></td>
+                        <td><%= record.low_pressure %></td>
+                        <td><%= record.heartbeat %></td>
+                        <td><%= record.formattedDate %></td> <!-- Display formatted date -->
+                        <td>
+                            <form action="/delete/<%= record.id %>" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm">刪除</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+        <a href="/" class="btn btn-primary">返回</a>
+        <a href="/export/csv" class="btn btn-secondary">導出CSV</a>
+        <a href="/export/pdf" class="btn btn-success">導出PDF</a>
+    </div>
+</body>
+</html>

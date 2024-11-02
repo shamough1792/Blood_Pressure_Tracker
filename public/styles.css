@@ -1,0 +1,26 @@
+body {
+    font-family: 'Arial', sans-serif;
+}
+
+h1 {
+    margin-bottom: 30px;
+}
+
+table {
+    margin-top: 20px;
+}
+
+.btn {
+    margin: 5px;
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.container {
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 20px;
+    background-color: white;
+}
