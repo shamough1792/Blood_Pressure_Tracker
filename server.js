@@ -30,15 +30,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-// Routes
+// GET route for the index page
 app.get('/', (req, res) => {
-    res.render('index');
+    res.render('index', { successMessage: null }); // Ensure successMessage is defined
 });
 
+// POST route to add a record
 app.post('/add', (req, res) => {
     const { high_pressure, low_pressure, heartbeat, record_date, record_time } = req.body;
 
-    // Create a new date object based on the user input or default to now
     let recordedAt;
     if (record_date && record_time) {
         recordedAt = new Date(`${record_date}T${record_time}`);
@@ -49,8 +49,15 @@ app.post('/add', (req, res) => {
     const query = 'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at) VALUES (?, ?, ?, ?)';
     db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt], (err) => {
         if (err) throw err;
-        res.redirect('/records');
+
+        // Render the index page with a success message
+        res.render('index', { successMessage: '血壓記錄已成功添加！' });
     });
+});
+
+// Ensure that the GET route for the index page also passes successMessage
+app.get('/', (req, res) => {
+    res.render('index', { successMessage: null }); // Ensure successMessage is defined
 });
 
 app.get('/records', (req, res) => {

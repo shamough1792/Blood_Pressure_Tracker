@@ -2,45 +2,45 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>血壓記錄</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css"> <!-- Custom CSS -->
+    <link rel="stylesheet" href="/styles.css"> <!-- Link to your CSS file -->
+    <script>
+        // Show the alert if there's a success message
+        function showAlert(message) {
+            alert(message);
+        }
+    </script>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="text-center">血壓記錄</h1>
-        <form action="/add" method="POST" class="mt-4">
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label for="high_pressure">高壓</label>
-                    <input type="number" class="form-control" name="high_pressure" required>
-                </div>
-                <div class="form-group col-md-4">
-                    <label for="low_pressure">低壓</label>
-                    <input type="number" class="form-control" name="low_pressure" required>
-                </div>
-                <div class="form-group col-md-4">
-                    <label for="heartbeat">心跳</label>
-                    <input type="number" class="form-control" name="heartbeat" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="record_date">日期</label>
-                    <input type="date" class="form-control" name="record_date">
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="record_time">時間</label>
-                    <input type="time" class="form-control" name="record_time">
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">添加記錄</button>
+<body>
+    <div class="container">
+        <h1>血壓記錄</h1>
+
+        <% if (typeof successMessage !== 'undefined' && successMessage) { %>
+            <script>
+                window.onload = function() {
+                    showAlert('<%= successMessage %>');
+                };
+            </script>
+        <% } %>
+
+        <form action="/add" method="post">
+            <label for="high_pressure">高壓:</label>
+            <input type="number" name="high_pressure" required>
+            <label for="low_pressure">低壓:</label>
+            <input type="number" name="low_pressure" required>
+            <label for="heartbeat">心跳:</label>
+            <input type="number" name="heartbeat" required>
+            <label for="record_date">日期:</label>
+            <input type="date" name="record_date">
+            <label for="record_time">時間:</label>
+            <input type="time" name="record_time">
+            <button type="submit">添加記錄</button>
         </form>
-        <div class="mt-4 text-center">
-            <a href="/records" class="btn btn-info">查看記錄</a>
-            <a href="/export/csv" class="btn btn-secondary">導出CSV</a>
-            <a href="/export/pdf" class="btn btn-success">導出PDF</a>
+
+        <div class="links">
+            <a href="/records" class="link-button records">查看記錄</a>
+            <a href="/export/csv" class="link-button csv">導出CSV</a>
+            <a href="/export/pdf" class="link-button pdf">導出PDF</a>
         </div>
     </div>
 </body>
