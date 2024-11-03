@@ -143,6 +143,7 @@ const port = 3000;
  
 * 0.3
     * Fixed package.json.
+    * Fixed record data problem.
     * Added auto reconnect to database to avoid time out.
 
 <br>
