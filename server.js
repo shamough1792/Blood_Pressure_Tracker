@@ -3,9 +3,7 @@ const bodyParser = require('body-parser');
 const mysql = require('mysql2');
 const { createObjectCsvWriter } = require('csv-writer');
 const ejs = require('ejs');
-const PDFDocument = require('pdfkit');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-const moment = require('moment'); // Import moment.js
 const path = require('path');
 const fs = require('fs');
 
@@ -133,52 +131,24 @@ app.get('/export/csv', (req, res) => {
     });
 });
 
-// Export to PDF
-app.get('/export/pdf', (req, res) => {
-    const doc = new PDFDocument();
-    const fileName = 'records.pdf';
-    res.setHeader('Content-disposition', 'attachment; filename=' + fileName);
-    res.setHeader('Content-type', 'application/pdf');
-    doc.pipe(res);
-    
-    // Embed the custom font
-    const fontPath = path.join(__dirname, 'fonts/NotoSansTC-Regular.ttf'); // Adjust the path accordingly
-    doc.font(fontPath);
-    
-    // Title
-    doc.fontSize(25).text('血壓記錄', { align: 'center' });
-    doc.moveDown();
-
-    // Table Header
-    doc.fontSize(12).text('高壓     低壓     心跳           記錄時間', {
-        align: 'center'
-    });
-    doc.moveDown();
-    
-    // Draw a line
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    doc.moveDown();
-
-    // Query the database
-    db.query('SELECT * FROM records', (err, results) => {
+// Check the connection status every 5 minute
+setInterval(() => {
+    db.query('SELECT 1', (err, results) => {
         if (err) {
-            console.error('Database error:', err);
-            res.status(500).send('Error fetching records');
-            return;
-        }
-
-        // Add each record to the PDF
-        results.forEach(record => {
-            const formattedDate = moment(record.recorded_at).format('YYYY-MM-DD HH:mm:ss'); // Format date
-            doc.text(`${record.high_pressure}     ${record.low_pressure}     ${record.heartbeat}           ${formattedDate}`, {
-                align: 'center'
+            console.error('Database connection lost, reconnecting:', err);
+            db.connect((err) => {
+                if (err) {
+                    console.error('Error reconnecting to database:', err);
+                } else {
+                    console.log('Reconnected to database');
+                }
             });
-        });
-
-        // Finish the document
-        doc.end();
+        } else {
+            // Output the result of SELECT 1
+            console.log('Database connection is alive. Query result:', results);
+        }
     });
-});
+}, 300000); // 5 minute
 
 // Start server
 app.listen(port, () => {
