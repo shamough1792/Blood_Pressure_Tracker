@@ -14,7 +14,7 @@ const port = 3000;
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'tracker_user', // replace with your MariaDB username
-    password: 'Your_Password', // replace with your MariaDB password
+    password: 'lkw988667', // replace with your MariaDB password
     database: 'blood_pressure_tracker'
 });
 
@@ -102,6 +102,22 @@ app.post('/delete/:id', (req, res) => {
     });
 });
 
+// Function to format the date
+function formatDate(date) {
+    const options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+    };
+
+    const formattedDate = date.toLocaleString('zh-HK', options);
+    return formattedDate.replace(',', ''); // Remove the comma between date and time
+}
+
 // Export to CSV
 app.get('/export/csv', (req, res) => {
     const csvPath = path.join(__dirname, 'records.csv');
@@ -115,11 +131,20 @@ app.get('/export/csv', (req, res) => {
         ]
     });
 
-    db.query('SELECT * FROM records', (err, results) => {
+    // Query the records ordered by recorded_at in ascending order
+    db.query('SELECT * FROM records ORDER BY recorded_at ASC', (err, results) => {
         if (err) throw err;
 
-        // Write the CSV file
-        csvWriter.writeRecords(results)
+        // Format the recorded_at field for each record
+        const formattedRecords = results.map(record => ({
+            high_pressure: record.high_pressure,
+            low_pressure: record.low_pressure,
+            heartbeat: record.heartbeat,
+            recorded_at: formatDate(new Date(record.recorded_at)) // Format the date
+        }));
+
+        // Write the formatted records to the CSV file
+        csvWriter.writeRecords(formattedRecords)
             .then(() => {
                 // Add a UTF-8 BOM to the file
                 fs.readFile(csvPath, 'utf8', (err, data) => {
