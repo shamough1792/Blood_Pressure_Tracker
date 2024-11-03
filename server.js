@@ -6,6 +6,7 @@ const ejs = require('ejs');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const path = require('path');
 const fs = require('fs');
+const xlsx = require('xlsx');
 
 const app = express();
 const port = 3000;
@@ -128,67 +129,61 @@ function formatDateForFilename(date) {
     return `${year}年${month}月${day}日_${hours}時${minutes}分`;
 }
 
-// Export to CSV
-app.get('/export/csv', (req, res) => {
-    const today = new Date();
-    const formattedDate = formatDateForFilename(today);
-    const csvFilename = `血壓記錄_${formattedDate}.csv`;
-    const csvPath = path.join(__dirname, csvFilename);
-    
-    const csvWriter = createObjectCsvWriter({
-        path: csvPath,
-        header: [
-            { id: 'high_pressure', title: '高壓' },
-            { id: 'low_pressure', title: '低壓' },
-            { id: 'heartbeat', title: '心跳' },
-            { id: 'recorded_at', title: '記錄時間' }
-        ]
-    });
-
-    // Query the records ordered by recorded_at in ascending order
+// Export to Excel
+app.get('/export/excel', (req, res) => {
     db.query('SELECT * FROM records ORDER BY recorded_at ASC', (err, results) => {
         if (err) throw err;
 
-        // Format the recorded_at field for each record
-        const formattedRecords = results.map(record => ({
-            high_pressure: record.high_pressure,
-            low_pressure: record.low_pressure,
-            heartbeat: record.heartbeat,
-            recorded_at: formatDate(new Date(record.recorded_at)) // Format the date
-        }));
+        // Group records by year and month
+        const groupedRecords = results.reduce((acc, record) => {
+            const date = new Date(record.recorded_at);
+            const yearMonth = `${date.getFullYear()}年${date.getMonth() + 1}月`; // Format: YYYY年MM月
 
-        // Write the formatted records to the CSV file
-        csvWriter.writeRecords(formattedRecords)
-            .then(() => {
-                // Add a UTF-8 BOM to the file
-                fs.readFile(csvPath, 'utf8', (err, data) => {
-                    if (err) throw err;
-                    const bom = '\uFEFF'; // BOM for UTF-8
-                    fs.writeFile(csvPath, bom + data, (err) => {
-                        if (err) throw err;
-
-                        // Download the CSV file
-                        res.download(csvPath, csvFilename, (err) => {
-                            if (err) {
-                                console.error('Error downloading the file:', err);
-                            } else {
-                                // Delete the CSV file after downloading
-                                fs.unlink(csvPath, (err) => {
-                                    if (err) {
-                                        console.error('Error deleting the file:', err);
-                                    } else {
-                                        console.log('CSV file deleted successfully:', csvPath);
-                                    }
-                                });
-                            }
-                        });
-                    });
-                });
-            })
-            .catch(err => {
-                console.error('Error writing CSV:', err);
-                res.status(500).send('Error generating CSV file');
+            if (!acc[yearMonth]) {
+                acc[yearMonth] = [];
+            }
+            acc[yearMonth].push({
+                高壓: record.high_pressure,
+                低壓: record.low_pressure,
+                心跳: record.heartbeat,
+                記錄時間: formatDate(date) // Format the date for display
             });
+            return acc;
+        }, {});
+
+        // Create a new workbook
+        const workbook = xlsx.utils.book_new();
+
+        // Add each month as a separate sheet
+        Object.keys(groupedRecords).forEach(month => {
+            const worksheet = xlsx.utils.json_to_sheet(groupedRecords[month]);
+            xlsx.utils.book_append_sheet(workbook, worksheet, month);
+        });
+
+        // Define the filename
+        const today = new Date();
+        const formattedDate = formatDateForFilename(today);
+        const excelFilename = `血壓記錄_${formattedDate}.xlsx`;
+
+        // Write the workbook to a file
+        const excelPath = path.join(__dirname, excelFilename);
+        xlsx.writeFile(workbook, excelPath);
+
+        // Download the Excel file
+        res.download(excelPath, excelFilename, (err) => {
+            if (err) {
+                console.error('Error downloading the file:', err);
+            } else {
+                // Optionally delete the Excel file after downloading
+                fs.unlink(excelPath, (err) => {
+                    if (err) {
+                        console.error('Error deleting the file:', err);
+                    } else {
+                        console.log('Excel file deleted successfully:', excelPath);
+                    }
+                });
+            }
+        });
     });
 });
 
