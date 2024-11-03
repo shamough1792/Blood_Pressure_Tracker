@@ -33,20 +33,29 @@ app.get('/', (req, res) => {
     res.render('index', { successMessage: null }); // Ensure successMessage is defined
 });
 
-// POST route to add a record
 app.post('/add', (req, res) => {
     const { high_pressure, low_pressure, heartbeat, record_date, record_time } = req.body;
 
     let recordedAt;
+
+    // If custom date and time are provided, use them
     if (record_date && record_time) {
         recordedAt = new Date(`${record_date}T${record_time}`);
     } else {
-        recordedAt = new Date(); // Use current date and time
+        // If not, use the current date and time
+        recordedAt = new Date();
     }
+
+    // Debugging: Log the received values
+    console.log('Received data:', { high_pressure, low_pressure, heartbeat, record_date, record_time });
+    console.log('Recorded At:', recordedAt.toISOString());
 
     const query = 'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at) VALUES (?, ?, ?, ?)';
     db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt], (err) => {
-        if (err) throw err;
+        if (err) {
+            console.error('Error inserting record:', err);
+            return res.status(500).send('Error adding record');
+        }
 
         // Render the index page with a success message
         res.render('index', { successMessage: '血壓記錄已成功添加！' });
@@ -62,21 +71,24 @@ app.get('/records', (req, res) => {
     db.query('SELECT * FROM records ORDER BY recorded_at ASC', (err, results) => {
         if (err) throw err;
 
-        // Format the date for each record
-        const formattedRecords = results.map(record => {
+        // Group records by year and month
+        const groupedRecords = results.reduce((acc, record) => {
             const date = new Date(record.recorded_at);
-            const options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true };
-            const formattedDate = date.toLocaleString('zh-HK', options).replace(',', '');
-            const [datePart, timePart] = formattedDate.split(' ');
-            const ampm = date.getHours() >= 12 ? '下午' : '上午';
+            const yearMonth = `${date.getFullYear()}-${date.getMonth() + 1}`; // Format: YYYY-MM
 
-            return {
+            if (!acc[yearMonth]) {
+                acc[yearMonth] = [];
+            }
+            acc[yearMonth].push({
                 ...record,
-                formattedDate: `${datePart}${ampm}(${timePart})`
-            };
-        });
+                formattedDate: date.toLocaleString('zh-HK', {
+                    year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true
+                }).replace(',', '')
+            });
+            return acc;
+        }, {});
 
-        res.render('records', { records: formattedRecords });
+        res.render('records', { groupedRecords });
     });
 });
 

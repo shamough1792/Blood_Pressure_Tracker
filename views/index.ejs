@@ -23,19 +23,24 @@
             </script>
         <% } %>
 
-        <form action="/add" method="post">
-            <label for="high_pressure">高壓:</label>
-            <input type="number" name="high_pressure" required>
-            <label for="low_pressure">低壓:</label>
-            <input type="number" name="low_pressure" required>
-            <label for="heartbeat">心跳:</label>
-            <input type="number" name="heartbeat" required>
-            <label for="record_date">日期:</label>
-            <input type="date" name="record_date">
-            <label for="record_time">時間:</label>
-            <input type="time" name="record_time">
-            <button type="submit">添加記錄</button>
-        </form>
+<form action="/add" method="POST">
+    <label for="high_pressure">高壓:</label>
+    <input type="number" name="high_pressure" required>
+
+    <label for="low_pressure">低壓:</label>
+    <input type="number" name="low_pressure" required>
+
+    <label for="heartbeat">心跳:</label>
+    <input type="number" name="heartbeat" required>
+
+    <label for="record_date">日期:</label>
+    <input type="date" name="record_date" required>
+
+    <label for="record_time">時間:</label>
+    <input type="time" name="record_time" required>
+
+    <button type="submit">添加記錄</button>
+</form>
 
         <div class="links">
             <a href="/records" class="link-button records">查看記錄</a>

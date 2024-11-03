@@ -4,40 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>血壓記錄</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css"> <!-- Custom CSS -->
+    <link rel="stylesheet" href="/styles.css"> <!-- Link to your CSS file -->
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* General font style */
+            background-color: #f9f9f9; /* Light background color */
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center; /* Center the main heading */
+            color: #333; /* Darker color for the heading */
+        }
+        h2 {
+            color: #555; /* Color for subheadings */
+            margin-top: 20px;
+        }
+        .table-container {
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            margin: 20px 0; /* Add some margin */
+        }
+        table {
+            width: 80%; /* Adjust width as needed */
+            border-collapse: collapse; /* Ensure borders are collapsed */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+            background-color: #fff; /* White background for the table */
+        }
+        th, td {
+            border: 1px solid #ccc; /* Add border to cells */
+            padding: 10px; /* Add padding for better spacing */
+            text-align: center; /* Center text in cells */
+        }
+        th {
+            background-color: #696969; /* Green background for headers */
+            color: white; /* White text color for headers */
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2; /* Zebra striping for rows */
+        }
+        tr:hover {
+            background-color: #e8f5e9; /* Highlight row on hover */
+        }
+        .navigation {
+            text-align: center; /* Center navigation links */
+            margin-top: 20px;
+        }
+        a {
+            margin: 0 10px; /* Spacing between links */
+            text-decoration: none; /* Remove underline from links */
+            color: #4CAF50; /* Green color for links */
+        }
+        a:hover {
+            text-decoration: underline; /* Underline on hover */
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="text-center">血壓記錄</h1>
-        <table class="table table-striped mt-4">
-            <thead class="thead-dark">
-                <tr>
-                    <th>高壓</th>
-                    <th>低壓</th>
-                    <th>心跳</th>
-                    <th>記錄時間</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% records.forEach(record => { %>
+<body>
+    <h1>血壓記錄</h1>
+
+    <% Object.keys(groupedRecords).forEach(yearMonth => { %>
+        <h2><%= yearMonth.replace('-', '年') %>月</h2>
+        <div class="table-container">
+            <table>
+                <thead>
                     <tr>
-                        <td><%= record.high_pressure %></td>
-                        <td><%= record.low_pressure %></td>
-                        <td><%= record.heartbeat %></td>
-                        <td><%= record.formattedDate %></td> <!-- Display formatted date -->
-                        <td>
-                            <form action="/delete/<%= record.id %>" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-danger btn-sm">刪除</button>
-                            </form>
-                        </td>
+                        <th>高壓</th>
+                        <th>低壓</th>
+                        <th>心跳</th>
+                        <th>記錄時間</th>
+                        <th>操作</th>
                     </tr>
-                <% }); %>
-            </tbody>
-        </table>
-        <a href="/" class="btn btn-primary">返回</a>
-        <a href="/export/csv" class="btn btn-secondary">導出CSV</a>
+                </thead>
+                <tbody>
+                    <% groupedRecords[yearMonth].forEach(record => { %>
+                        <tr>
+                            <td><%= record.high_pressure %></td>
+                            <td><%= record.low_pressure %></td>
+                            <td><%= record.heartbeat %></td>
+                            <td><%= record.formattedDate %></td>
+                            <td>
+                                <form action="/delete/<%= record.id %>" method="POST" style="display:inline;">
+                                    <button type="submit" onclick="return confirm('確定要刪除這條記錄嗎？');">刪除</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    <% }); %>
+
+    <div class="navigation">
+            <a href="/" class="link-button records">返回</a>
+            <a href="/export/csv" class="link-button csv">導出CSV</a>
     </div>
 </body>
 </html>
