@@ -69,7 +69,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/records', (req, res) => {
-    db.query('SELECT * FROM records ORDER BY recorded_at ASC', (err, results) => {
+    db.query('SELECT * FROM records ORDER BY recorded_at DESC', (err, results) => {
         if (err) throw err;
 
         // Group records by year and month
