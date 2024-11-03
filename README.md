@@ -28,7 +28,7 @@ The Blood Pressure Tracker is a web application built using Node.js and MariaDB.
 
 ### Installing
 
-* Download the file from latest release.
+* Download the file from latest release or download source file.
 * Create new folder to contain all the file from release.
 
 <br>
