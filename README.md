@@ -140,6 +140,10 @@ const port = 3000;
 * 0.2
     * Update UI.
     * Adding pop up when successful add new record.
+ 
+* 0.3
+    * Fixed package.json.
+    * Added auto reconnect to database to avoid time out.
 
 <br>
 
