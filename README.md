@@ -149,7 +149,20 @@ const port = 3000;
 * 0.3.5
     * Update the CSV output order by date.
     * Update the CSV date and time format.
+
+* 0.4
+    * Update the output CSV name format.
+    * Added favicon.
   
+<br>
+
+## Future Planning
+
+<br>
+
+* Multi-language support.
+* Multi-user support.
+
 <br>
 
 ## License
