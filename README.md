@@ -154,7 +154,7 @@ const port = 3000;
     * Update the output CSV name format.
     * Added favicon.
 
-* 0.4.5
+* 0.5
     * Changed output .xlsx instead of .csv.
     * Moved buttons in records page to top.
     * Now show records order by DESC.
