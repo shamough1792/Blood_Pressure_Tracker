@@ -65,6 +65,11 @@
 <body>
     <h1>血壓記錄</h1>
 
+    <div class="navigation">
+            <a href="/" class="link-button records">返回</a>
+            <a href="/export/excel" class="link-button csv">匯出至excel</a>
+    </div>
+
     <% Object.keys(groupedRecords).forEach(yearMonth => { %>
         <h2><%= yearMonth.replace('-', '年') %>月</h2>
         <div class="table-container">
@@ -97,9 +102,5 @@
         </div>
     <% }); %>
 
-    <div class="navigation">
-            <a href="/" class="link-button records">返回</a>
-            <a href="/export/excel" class="link-button csv">匯出至excel</a>
-    </div>
 </body>
 </html>
