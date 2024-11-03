@@ -146,6 +146,10 @@ const port = 3000;
     * Fixed record data problem.
     * Added auto reconnect to database to avoid time out.
 
+* 0.3.5
+    * Update the CSV output order by date.
+    * Update the CSV date and time format.
+  
 <br>
 
 ## License
