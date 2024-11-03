@@ -118,9 +118,23 @@ function formatDate(date) {
     return formattedDate.replace(',', ''); // Remove the comma between date and time
 }
 
+// Function to format the date and time for the filename
+function formatDateForFilename(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}年${month}月${day}日${hours}時${minutes}分`;
+}
+
 // Export to CSV
 app.get('/export/csv', (req, res) => {
-    const csvPath = path.join(__dirname, 'records.csv');
+    const today = new Date();
+    const formattedDate = formatDateForFilename(today);
+    const csvFilename = `血壓記錄_${formattedDate}.csv`;
+    const csvPath = path.join(__dirname, csvFilename);
+    
     const csvWriter = createObjectCsvWriter({
         path: csvPath,
         header: [
@@ -153,7 +167,7 @@ app.get('/export/csv', (req, res) => {
                     fs.writeFile(csvPath, bom + data, (err) => {
                         if (err) throw err;
                         // Download the CSV file
-                        res.download(csvPath, 'records.csv', (err) => {
+                        res.download(csvPath, csvFilename, (err) => {
                             if (err) {
                                 console.error('Error downloading the file:', err);
                             }
