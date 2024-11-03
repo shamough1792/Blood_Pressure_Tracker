@@ -14,7 +14,7 @@ const port = 3000;
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'tracker_user', // replace with your MariaDB username
-    password: 'lkw988667', // replace with your MariaDB password
+    password: 'Your_Password', // replace with your MariaDB password
     database: 'blood_pressure_tracker'
 });
 
