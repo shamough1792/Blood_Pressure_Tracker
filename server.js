@@ -125,7 +125,7 @@ function formatDateForFilename(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}年${month}月${day}日${hours}時${minutes}分`;
+    return `${year}年${month}月${day}日_${hours}時${minutes}分`;
 }
 
 // Export to CSV
@@ -166,10 +166,20 @@ app.get('/export/csv', (req, res) => {
                     const bom = '\uFEFF'; // BOM for UTF-8
                     fs.writeFile(csvPath, bom + data, (err) => {
                         if (err) throw err;
+
                         // Download the CSV file
                         res.download(csvPath, csvFilename, (err) => {
                             if (err) {
                                 console.error('Error downloading the file:', err);
+                            } else {
+                                // Delete the CSV file after downloading
+                                fs.unlink(csvPath, (err) => {
+                                    if (err) {
+                                        console.error('Error deleting the file:', err);
+                                    } else {
+                                        console.log('CSV file deleted successfully:', csvPath);
+                                    }
+                                });
                             }
                         });
                     });
