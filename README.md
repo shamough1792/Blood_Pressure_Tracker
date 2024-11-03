@@ -53,6 +53,8 @@ node server.js
 
 * Setup database
 
+<br>
+
 ```
 sudo apt install mariadb-server
 ```
@@ -93,6 +95,8 @@ GRANT ALL PRIVILEGES ON blood_pressure_tracker.* TO 'tracker_user'@'localhost';
 
 * Setup server.js
 
+<br>
+
 ```
 // Database connection
 const db = mysql.createConnection({
@@ -116,7 +120,11 @@ const port = 3000;
 
 ## Screenshot Of The Website
 
+<br>
+
 ![Alt Text](images/index.png)
+
+<br>
 
 ![Alt Text](images/record.png)
 
