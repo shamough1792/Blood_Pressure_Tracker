@@ -1,8 +1,8 @@
-# Blood Pressure Record 記錄血壓
+# Blood Pressure Tracker 記錄血壓
 
 <br>
 
-Blood Pressure Recording Website.
+Blood Pressure Tracker Website.
 
 <br>
 
