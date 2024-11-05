@@ -65,6 +65,10 @@
 <body>
     <h1>血壓記錄</h1>
 
+<% if (typeof noDataMessage !== 'undefined' && noDataMessage) { %>
+    <div class="alert alert-warning"><%= noDataMessage %></div>
+<% } %>
+
     <div class="navigation">
             <a href="/" class="link-button records">返回</a>
             <a href="/export/excel" class="link-button csv">匯出至excel</a>
