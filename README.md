@@ -167,6 +167,9 @@ const port = 3000;
     * Moved buttons in records page to top.
     * Now show records order by DESC.
 
+* 0.5.1
+    * Fixed pressing export excel button program terminate when no record is input.
+
 <br>
 
 ## Future Planning
