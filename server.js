@@ -134,6 +134,15 @@ app.get('/export/excel', (req, res) => {
     db.query('SELECT * FROM records ORDER BY recorded_at ASC', (err, results) => {
         if (err) throw err;
 
+        // Check if there are any records
+        if (results.length === 0) {
+            // Render a message indicating no data is available
+            return res.render('records', {
+                groupedRecords: {},
+                noDataMessage: '目前沒有記錄可供匯出。' // Message in Chinese
+            });
+        }
+
         // Group records by year and month
         const groupedRecords = results.reduce((acc, record) => {
             const date = new Date(record.recorded_at);
