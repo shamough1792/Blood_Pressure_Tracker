@@ -130,6 +130,12 @@ const port = 3000;
 
 <br>
 
+<br>
+
+![Alt Text](images/modify.png)
+
+<br>
+
 ## Authors
 
 <br>
@@ -169,6 +175,10 @@ const port = 3000;
 
 * 0.5.1
     * Fixed pressing export excel button program terminate when no record is input.
+
+* 0.6
+    * improved The layout of record page with sorted record by month, default display latest month
+    * Added Modify record button and page.
 
 <br>
 
