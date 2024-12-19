@@ -1,9 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2');
-const { createObjectCsvWriter } = require('csv-writer');
 const ejs = require('ejs');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const path = require('path');
 const fs = require('fs');
 const xlsx = require('xlsx');
@@ -31,25 +29,20 @@ app.use(express.static('public'));
 
 // GET route for the index page
 app.get('/', (req, res) => {
-    res.render('index', { successMessage: null }); // Ensure successMessage is defined
+    res.render('index', { successMessage: null });
 });
 
 app.post('/add', (req, res) => {
-    const { high_pressure, low_pressure, heartbeat, record_date, record_time } = req.body;
+    const { high_pressure, low_pressure, heartbeat, record_date, time_of_day } = req.body;
 
     let recordedAt;
 
-    // If custom date and time are provided, use them
-    if (record_date && record_time) {
-        recordedAt = new Date(`${record_date}T${record_time}`);
+    // Set time for AM or PM
+    if (time_of_day === 'PM') {
+        recordedAt = new Date(`${record_date}T20:00:00`); // PM set to 8 PM
     } else {
-        // If not, use the current date and time
-        recordedAt = new Date();
+        recordedAt = new Date(`${record_date}T08:00:00`); // AM set to 8 AM
     }
-
-    // Debugging: Log the received values
-    console.log('Received data:', { high_pressure, low_pressure, heartbeat, record_date, record_time });
-    console.log('Recorded At:', recordedAt.toISOString());
 
     const query = 'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at) VALUES (?, ?, ?, ?)';
     db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt], (err) => {
@@ -57,15 +50,8 @@ app.post('/add', (req, res) => {
             console.error('Error inserting record:', err);
             return res.status(500).send('Error adding record');
         }
-
-        // Render the index page with a success message
         res.render('index', { successMessage: '血壓記錄已成功添加！' });
     });
-});
-
-// Ensure that the GET route for the index page also passes successMessage
-app.get('/', (req, res) => {
-    res.render('index', { successMessage: null }); // Ensure successMessage is defined
 });
 
 app.get('/records', (req, res) => {
@@ -75,7 +61,7 @@ app.get('/records', (req, res) => {
         // Group records by year and month
         const groupedRecords = results.reduce((acc, record) => {
             const date = new Date(record.recorded_at);
-            const yearMonth = `${date.getFullYear()}-${date.getMonth() + 1}`; // Format: YYYY-MM
+            const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // Format: YYYY-MM
 
             if (!acc[yearMonth]) {
                 acc[yearMonth] = [];
@@ -89,7 +75,52 @@ app.get('/records', (req, res) => {
             return acc;
         }, {});
 
-        res.render('records', { groupedRecords });
+        // Get the selected month from the query parameter or default to the latest month
+        const selectedMonth = req.query.yearMonth || (Object.keys(groupedRecords).length ? Object.keys(groupedRecords)[0] : null);
+
+        // Pass groupedRecords and selectedMonth to the view
+        res.render('records', { groupedRecords, selectedMonth });
+    });
+});
+
+// Route to display the modification form
+app.get('/modify/:id', (req, res) => {
+    const recordId = req.params.id;
+    db.query('SELECT * FROM records WHERE id = ?', [recordId], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Database error');
+        }
+        if (results.length === 0) {
+            return res.status(404).send('Record not found');
+        }
+
+        const record = results[0];
+        res.render('modify', { record });
+    });
+});
+
+// Route to handle the form submission
+app.post('/update/:id', (req, res) => {
+    const recordId = req.params.id;
+    const { high_pressure, low_pressure, heartbeat, record_date, time_of_day } = req.body;
+
+    let recordedAt;
+
+    // Set time for AM or PM
+    if (time_of_day === 'PM') {
+        recordedAt = new Date(`${record_date}T20:00:00`); // PM set to 8 PM
+    } else {
+        recordedAt = new Date(`${record_date}T08:00:00`); // AM set to 8 AM
+    }
+
+    const query = 'UPDATE records SET high_pressure = ?, low_pressure = ?, heartbeat = ?, recorded_at = ? WHERE id = ?';
+    db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt, recordId], (err) => {
+        if (err) {
+            console.error('Error updating record:', err);
+            return res.status(500).send('Error updating record');
+        }
+        res.redirect('/records');
     });
 });
 
@@ -134,13 +165,9 @@ app.get('/export/excel', (req, res) => {
     db.query('SELECT * FROM records ORDER BY recorded_at ASC', (err, results) => {
         if (err) throw err;
 
-        // Check if there are any records
+        // Check if there are no records
         if (results.length === 0) {
-            // Render a message indicating no data is available
-            return res.render('records', {
-                groupedRecords: {},
-                noDataMessage: '目前沒有記錄可供匯出。' // Message in Chinese
-            });
+            return res.status(404).send('沒有記錄可供匯出'); // No records to export
         }
 
         // Group records by year and month
@@ -196,7 +223,7 @@ app.get('/export/excel', (req, res) => {
     });
 });
 
-// Check the connection status every 5 minute
+// Check the connection status every 5 minutes
 setInterval(() => {
     db.query('SELECT 1', (err, results) => {
         if (err) {
@@ -209,11 +236,10 @@ setInterval(() => {
                 }
             });
         } else {
-            // Output the result of SELECT 1
             console.log('Database connection is alive. Query result:', results);
         }
     });
-}, 300000); // 5 minute
+}, 600000); // 5 minutes
 
 // Start server
 app.listen(port, () => {
