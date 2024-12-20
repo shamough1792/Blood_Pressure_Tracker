@@ -167,7 +167,12 @@ app.get('/export/excel', (req, res) => {
 
         // Check if there are no records
         if (results.length === 0) {
-            return res.status(404).send('沒有記錄可供匯出'); // No records to export
+            return res.send(`
+                <script>
+                    alert('沒有記錄可供匯出');
+                    window.history.back(); // Go back to the previous page
+                </script>
+            `); // Send a JavaScript response
         }
 
         // Group records by year and month
@@ -223,7 +228,7 @@ app.get('/export/excel', (req, res) => {
     });
 });
 
-// Check the connection status every 5 minutes
+// Check the connection status every 10 minutes
 setInterval(() => {
     db.query('SELECT 1', (err, results) => {
         if (err) {
@@ -239,7 +244,7 @@ setInterval(() => {
             console.log('Database connection is alive. Query result:', results);
         }
     });
-}, 600000); // 5 minutes
+}, 600000); // 10 minutes
 
 // Start server
 app.listen(port, () => {
