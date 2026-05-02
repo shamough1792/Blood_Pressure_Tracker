@@ -17,7 +17,7 @@
             <h1>血壓記錄</h1>
             <div style="display:flex;gap:4px;">
                 <a href="/records" class="nav-btn">記錄</a>
-                <button class="nav-btn" id="installBtn" onclick="installApp()" style="display:none;">＋</button>
+                <button class="nav-btn" id="installBtn" onclick="installApp()">＋</button>
             </div>
         </div>
 
@@ -335,22 +335,22 @@
             }
         });
     </script>
-    </script>
     <script>
-        // PWA install prompt
+        // PWA 安裝（按鈕永遠顯示）
         let deferredPrompt = null;
         window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
             deferredPrompt = e;
-            document.getElementById('installBtn').style.display = 'block';
         });
         function installApp() {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(function() {
-                deferredPrompt = null;
-                document.getElementById('installBtn').style.display = 'none';
-            });
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function() {
+                    deferredPrompt = null;
+                });
+            } else {
+                alert('請在瀏覽器選單中選擇「加入主畫面」來安裝此應用程式。');
+            }
         }
     </script>
     <script>
