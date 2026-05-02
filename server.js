@@ -11,10 +11,10 @@ const port = 3000;
 
 // Database connection
 const db = mysql.createConnection({
-    host: 'localhost',
+    host: '192.168.1.222',
     user: 'tracker_user', // replace with your MariaDB username
-    password: 'Your_Password', // replace with your MariaDB password
-    database: 'blood_pressure_tracker'
+    password: '!Lkw988667', // replace with your MariaDB password
+    database: 'blood_test'
 });
 
 db.connect(err => {
@@ -35,14 +35,14 @@ app.get('/', (req, res) => {
 app.post('/add', (req, res) => {
     const { high_pressure, low_pressure, heartbeat, record_date, time_of_day } = req.body;
 
-    let recordedAt;
-
-    // Set time for AM or PM
-    if (time_of_day === 'PM') {
-        recordedAt = new Date(`${record_date}T20:00:00`); // PM set to 8 PM
-    } else {
-        recordedAt = new Date(`${record_date}T08:00:00`); // AM set to 8 AM
-    }
+    // Auto-detect date and time if not provided (elderly-friendly mode)
+    const now = new Date();
+    const date = record_date || now.toISOString().split('T')[0];
+    const hour = now.getHours();
+    const isPM = time_of_day === 'PM' || (time_of_day !== 'AM' && hour >= 12);
+    const recordedAt = isPM
+        ? new Date(`${date}T20:00:00`)
+        : new Date(`${date}T08:00:00`);
 
     const query = 'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at) VALUES (?, ?, ?, ?)';
     db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt], (err) => {
@@ -105,14 +105,14 @@ app.post('/update/:id', (req, res) => {
     const recordId = req.params.id;
     const { high_pressure, low_pressure, heartbeat, record_date, time_of_day } = req.body;
 
-    let recordedAt;
-
-    // Set time for AM or PM
-    if (time_of_day === 'PM') {
-        recordedAt = new Date(`${record_date}T20:00:00`); // PM set to 8 PM
-    } else {
-        recordedAt = new Date(`${record_date}T08:00:00`); // AM set to 8 AM
-    }
+    // Auto-detect date and time if not provided
+    const now = new Date();
+    const date = record_date || now.toISOString().split('T')[0];
+    const hour = now.getHours();
+    const isPM = time_of_day === 'PM' || (time_of_day !== 'AM' && hour >= 12);
+    const recordedAt = isPM
+        ? new Date(`${date}T20:00:00`)
+        : new Date(`${date}T08:00:00`);
 
     const query = 'UPDATE records SET high_pressure = ?, low_pressure = ?, heartbeat = ?, recorded_at = ? WHERE id = ?';
     db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt, recordId], (err) => {
