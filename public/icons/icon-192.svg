@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#2d6a4f"/>
+  <text x="96" y="80" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="28" fill="#fff">血壓</text>
+  <text x="96" y="120" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="28" fill="#fff">記錄</text>
+  <path d="M96 148c-28-14-46-32-46-50 0-12 8-20 18-20 8 0 16 4 20 12l8 12 8-12c4-8 12-12 20-12 10 0 18 8 18 20 0 18-18 36-46 50z" fill="#e8f5e9" opacity="0.9"/>
+</svg>
