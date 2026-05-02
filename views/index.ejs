@@ -93,6 +93,18 @@
 
                 <div id="bpStatus"></div>
 
+                <button type="button" class="btn-link" onclick="toggleDateTimeEditor()">📅 修改日期或時間</button>
+
+                <div class="datetime-editor" id="dateTimeEditor">
+                    <label for="editDate">日期</label>
+                    <input type="date" id="editDate">
+                    <label for="editPeriod">時段</label>
+                    <select id="editPeriod">
+                        <option value="AM">上午</option>
+                        <option value="PM">下午</option>
+                    </select>
+                </div>
+
                 <div class="step-actions">
                     <button type="submit" class="btn btn-primary">✓ 確認儲存</button>
                 </div>
@@ -227,6 +239,32 @@
             statusEl.textContent = statusText;
         }
 
+        // 切換日期時間編輯器
+        function toggleDateTimeEditor() {
+            const editor = document.getElementById('dateTimeEditor');
+            const isOpen = editor.classList.contains('show');
+            if (isOpen) {
+                editor.classList.remove('show');
+            } else {
+                // 同步編輯器與隱藏欄位的值
+                document.getElementById('editDate').value = document.getElementById('recordDate').value;
+                document.getElementById('editPeriod').value = document.getElementById('timeOfDay').value;
+                editor.classList.add('show');
+            }
+        }
+
+        // 編輯器變更時同步到隱藏欄位並更新確認頁
+        document.addEventListener('change', function(e) {
+            if (e.target.id === 'editDate') {
+                document.getElementById('recordDate').value = e.target.value;
+                if (currentStep === 4) updateConfirm();
+            }
+            if (e.target.id === 'editPeriod') {
+                document.getElementById('timeOfDay').value = e.target.value;
+                if (currentStep === 4) updateConfirm();
+            }
+        });
+
         // 表單提交 - AJAX 避免頁面跳轉
         document.getElementById('bpForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -261,6 +299,16 @@
             document.querySelector('.progress-container').style.display = 'block';
             document.getElementById('successScreen').classList.remove('active');
             document.getElementById('bpForm').reset();
+
+            // 關閉日期編輯器
+            document.getElementById('dateTimeEditor').classList.remove('show');
+
+            // 重置日期和時段為今天
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            document.getElementById('recordDate').value = today;
+            const hour = now.getHours();
+            document.getElementById('timeOfDay').value = hour >= 12 ? 'PM' : 'AM';
 
             // 重置到步驟 1
             currentStep = 0;
