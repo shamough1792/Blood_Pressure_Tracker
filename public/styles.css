@@ -1,111 +1,555 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+/* ========================================
+   血壓記錄系統 - 長者友善設計系統
+   ======================================== */
+
+/* --- 全域設定 --- */
+* {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+body {
+    font-family: 'Segoe UI', 'Noto Sans TC', Arial, sans-serif;
+    background-color: #f0f4f8;
+    color: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .container {
-    width: 90%;
-    max-width: 600px;
-    margin: 20px auto;
-    background: white;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-}
-
-h1 {
-    text-align: center;
-    color: #333;
-}
-
-form {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 20px 16px;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-label {
-    margin: 10px 0 5px;
+/* --- 頂部導航 --- */
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    margin-bottom: 16px;
 }
 
-input[type="number"],
-input[type="date"],
-input[type="time"] {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+.top-nav h1 {
+    font-size: 26px;
+    color: #1a1a2e;
+    font-weight: 700;
 }
 
-button {
-    padding: 10px;
-    background-color: #5cb85c;
-    color: white;
+.top-nav .nav-btn {
+    background: none;
     border: none;
-    border-radius: 4px;
+    font-size: 16px;
+    color: #2d6a4f;
     cursor: pointer;
-    margin-top: 10px;
+    padding: 10px 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: background 0.2s;
 }
 
-button:hover {
-    background-color: #4cae4c;
+.top-nav .nav-btn:hover {
+    background: #e8f5e9;
 }
 
-.links {
+/* --- 進度條 --- */
+.progress-container {
     text-align: center;
-    margin-top: 20px;
+    margin-bottom: 24px;
 }
 
-.links a {
-    margin: 0 10px;
-    color: #337ab7;
+.progress-steps {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.progress-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #d0d7de;
+    transition: background 0.3s;
+}
+
+.progress-dot.active {
+    background: #2d6a4f;
+}
+
+.progress-label {
+    font-size: 18px;
+    color: #666;
+}
+
+/* --- 步驟內容 (輸入頁) --- */
+.step {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.step.active {
+    display: flex;
+}
+
+.step-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.step-input {
+    width: 100%;
+    max-width: 280px;
+    padding: 20px 24px;
+    font-size: 36px;
+    font-weight: 700;
+    text-align: center;
+    border: 3px solid #d0d7de;
+    border-radius: 16px;
+    outline: none;
+    transition: border-color 0.3s;
+    background: #fff;
+}
+
+.step-input:focus {
+    border-color: #2d6a4f;
+    box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.15);
+}
+
+/* 隱藏 number input 的上下箭頭 */
+.step-input::-webkit-outer-spin-button,
+.step-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.step-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* --- 按鈕 --- */
+.btn {
+    width: 100%;
+    max-width: 280px;
+    padding: 18px 24px;
+    font-size: 22px;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    text-align: center;
     text-decoration: none;
+    display: inline-block;
 }
 
-.links a:hover {
-    text-decoration: underline;
+.btn:active {
+    transform: scale(0.97);
 }
 
-button {
-    padding: 10px;
-    color: white; /* Text color for form button */
+.btn-primary {
+    background: #2d6a4f;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #1b4d3d;
+}
+
+.btn-secondary {
+    background: #e8f5e9;
+    color: #2d6a4f;
+}
+
+.btn-secondary:hover {
+    background: #c8e6c9;
+}
+
+.btn-danger {
+    background: #d32f2f;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #b71c1c;
+}
+
+.btn-export {
+    background: #1565c0;
+    color: #fff;
+    padding: 12px 20px;
+    font-size: 18px;
+}
+
+.btn-export:hover {
+    background: #0d47a1;
+}
+
+.btn-back {
+    background: #f5f5f5;
+    color: #333;
+    padding: 12px 20px;
+    font-size: 18px;
+}
+
+.btn-back:hover {
+    background: #e0e0e0;
+}
+
+.step-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+    width: 100%;
+}
+
+.step-actions .btn {
+    max-width: 280px;
+}
+
+/* 步驟中的返回（左上） */
+.back-link {
+    align-self: flex-start;
+    background: none;
     border: none;
-    border-radius: 4px;
+    font-size: 18px;
+    color: #666;
     cursor: pointer;
-    margin-top: 10px;
+    padding: 8px 4px;
+    margin-bottom: 8px;
+}
+
+.back-link:hover {
+    color: #333;
+}
+
+/* --- 確認頁 --- */
+.confirm-card {
+    width: 100%;
+    max-width: 320px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    margin: 16px 0;
+}
+
+.confirm-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 22px;
+}
+
+.confirm-row:last-child {
+    border-bottom: none;
+}
+
+.confirm-label {
+    color: #666;
+}
+
+.confirm-value {
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+/* --- 血壓狀態標籤 --- */
+.bp-status {
+    display: inline-block;
+    padding: 8px 24px;
+    border-radius: 30px;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 8px 0;
+}
+
+.bp-normal {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.bp-elevated {
+    background: #fff8e1;
+    color: #f57f17;
+}
+
+.bp-high {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* --- 成功頁 --- */
+.success-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
     text-align: center;
-    display: inline-block; /* Align buttons next to each other */
 }
 
-button:hover {
-    opacity: 0.8; /* Optional: Add hover effect */
+.success-screen.active {
+    display: flex;
 }
 
-.link-button {
-    padding: 10px;
-    color: white !important; /* Force text color to be white */
-    border: none;
-    border-radius: 4px;
+.success-icon {
+    font-size: 72px;
+    margin-bottom: 16px;
+}
+
+.success-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2e7d32;
+    margin-bottom: 8px;
+}
+
+.success-sub {
+    font-size: 20px;
+    color: #666;
+    margin-bottom: 32px;
+}
+
+/* --- 卡片列表（記錄頁） --- */
+.month-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.month-nav .month-label {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a1a2e;
+    min-width: 160px;
+    text-align: center;
+}
+
+.month-nav .arrow-btn {
+    background: #fff;
+    border: 2px solid #d0d7de;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    font-size: 26px;
     cursor: pointer;
-    margin: 5px; /* Adjust spacing as needed */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    color: #333;
+}
+
+.month-nav .arrow-btn:hover {
+    background: #e8f5e9;
+    border-color: #2d6a4f;
+}
+
+.record-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-left: 6px solid #d0d7de;
+}
+
+.record-card.bp-normal-border {
+    border-left-color: #4caf50;
+}
+
+.record-card.bp-elevated-border {
+    border-left-color: #ffc107;
+}
+
+.record-card.bp-high-border {
+    border-left-color: #f44336;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 18px;
+    color: #666;
+}
+
+.card-body {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.card-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.card-metric .metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.card-metric .metric-label {
+    font-size: 14px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.card-actions .btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    max-width: none;
+    width: auto;
+    border-radius: 10px;
+}
+
+/* --- 無記錄提示 --- */
+.empty-state {
     text-align: center;
-    display: inline-block; /* Align buttons next to each other */
+    padding: 60px 20px;
+    color: #999;
+    font-size: 20px;
 }
 
-/* Button colors */
-.link-button.records {
-    background-color: #007BFF; /* Blue */
+/* --- 表單頁（修改頁用） --- */
+.form-page {
+    width: 100%;
 }
 
-.link-button.csv {
-    background-color: #6c757d; /* Grey */
+.form-page h1 {
+    font-size: 26px;
+    text-align: center;
+    margin-bottom: 24px;
+    color: #1a1a2e;
 }
 
-/* Hover effects for buttons */
-.link-button.records:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+.form-group {
+    margin-bottom: 20px;
 }
 
-.link-button.csv:hover {
-    background-color: #5a6268; /* Darker grey on hover */
+.form-group label {
+    display: block;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 16px 18px;
+    font-size: 22px;
+    border: 2px solid #d0d7de;
+    border-radius: 12px;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #2d6a4f;
+    box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.15);
+}
+
+.form-group select {
+    cursor: pointer;
+    appearance: auto;
+}
+
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+/* --- 導航連結列 --- */
+.nav-links {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* --- 響應式 --- */
+@media (max-width: 480px) {
+    .container {
+        padding: 12px;
+    }
+
+    .step-title {
+        font-size: 28px;
+    }
+
+    .step-input {
+        font-size: 32px;
+        padding: 16px 20px;
+    }
+
+    .confirm-row {
+        font-size: 18px;
+    }
+
+    .card-metric .metric-value {
+        font-size: 24px;
+    }
+
+    .month-nav .month-label {
+        font-size: 22px;
+        min-width: 140px;
+    }
+
+    .top-nav h1 {
+        font-size: 22px;
+    }
+}
+
+@media (min-width: 768px) {
+    .step-input {
+        max-width: 320px;
+    }
+
+    .btn {
+        max-width: 320px;
+    }
+
+    .record-card {
+        padding: 24px;
+    }
 }
