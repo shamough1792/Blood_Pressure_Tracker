@@ -15,7 +15,10 @@
         <!-- 頂部導航 -->
         <div class="top-nav">
             <h1>血壓記錄</h1>
-            <a href="/records" class="nav-btn">記錄</a>
+            <div style="display:flex;gap:4px;">
+                <a href="/records" class="nav-btn">記錄</a>
+                <button class="nav-btn" id="installBtn" onclick="installApp()" style="display:none;">＋</button>
+            </div>
         </div>
 
         <!-- 進度條 -->
@@ -331,6 +334,24 @@
                 }
             }
         });
+    </script>
+    </script>
+    <script>
+        // PWA install prompt
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').style.display = 'block';
+        });
+        function installApp() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function() {
+                deferredPrompt = null;
+                document.getElementById('installBtn').style.display = 'none';
+            });
+        }
     </script>
     <script>
         if ('serviceWorker' in navigator) {

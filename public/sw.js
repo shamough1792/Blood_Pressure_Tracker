@@ -1,7 +1,9 @@
-const CACHE_NAME = 'bp-tracker-v1';
+const CACHE_NAME = 'bp-tracker-v2';
 const STATIC_ASSETS = [
   '/styles.css',
   '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
   '/favicon.ico'
