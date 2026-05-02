@@ -124,15 +124,16 @@
         let currentStep = 1;
         let successTimer = null;
 
-        // 自動填入日期和時段
+        // 自動填入日期和時段（使用本地時間）
         document.addEventListener('DOMContentLoaded', function() {
             const now = new Date();
-            const today = now.toISOString().split('T')[0];
-            document.getElementById('recordDate').value = today;
+            const y = now.getFullYear();
+            const mo = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            document.getElementById('recordDate').value = y + '-' + mo + '-' + d;
 
             const hour = now.getHours();
-            const isPM = hour >= 12;
-            document.getElementById('timeOfDay').value = isPM ? 'PM' : 'AM';
+            document.getElementById('timeOfDay').value = hour >= 12 ? 'PM' : 'AM';
         });
 
         function goStep(n) {
@@ -303,10 +304,12 @@
             // 關閉日期編輯器
             document.getElementById('dateTimeEditor').classList.remove('show');
 
-            // 重置日期和時段為今天
+            // 重置日期和時段為今天（使用本地時間）
             const now = new Date();
-            const today = now.toISOString().split('T')[0];
-            document.getElementById('recordDate').value = today;
+            const y = now.getFullYear();
+            const mo = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            document.getElementById('recordDate').value = y + '-' + mo + '-' + d;
             const hour = now.getHours();
             document.getElementById('timeOfDay').value = hour >= 12 ? 'PM' : 'AM';
 
