@@ -1,53 +1,282 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">   
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>血壓記錄</title>
-    <link rel="stylesheet" href="/styles.css"> <!-- Link to your CSS file -->
-    <script>
-        // Show the alert if there's a success message
-        function showAlert(message) {
-            alert(message);
-        }
-    </script>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>血壓記錄</h1>
+        <!-- 頂部導航 -->
+        <div class="top-nav">
+            <h1>血壓記錄</h1>
+            <a href="/records" class="nav-btn">記錄</a>
+        </div>
 
-        <% if (typeof successMessage !== 'undefined' && successMessage) { %>
-            <script>
-                window.onload = function() {
-                    showAlert('<%= successMessage %>');
-                };
-            </script>
-        <% } %>
+        <!-- 進度條 -->
+        <div class="progress-container">
+            <div class="progress-steps">
+                <span class="progress-dot active" id="dot-1"></span>
+                <span class="progress-dot" id="dot-2"></span>
+                <span class="progress-dot" id="dot-3"></span>
+                <span class="progress-dot" id="dot-4"></span>
+            </div>
+            <div class="progress-label" id="stepLabel">步驟 1/4</div>
+        </div>
 
-<form action="/add" method="POST">
-    <label for="high_pressure">高壓:</label>
-    <input type="number" name="high_pressure" required>
+        <form id="bpForm" action="/add" method="POST" style="flex:1;display:flex;flex-direction:column;">
+            <!-- 隱藏欄位：自動填入 -->
+            <input type="hidden" name="record_date" id="recordDate">
+            <input type="hidden" name="time_of_day" id="timeOfDay">
 
-    <label for="low_pressure">低壓:</label>
-    <input type="number" name="low_pressure" required>
+            <!-- 步驟 1: 高壓 -->
+            <div class="step active" id="step-1">
+                <div class="step-title">高壓是多少？</div>
+                <input type="number" class="step-input" id="highPressure" name="high_pressure"
+                       placeholder="___" inputmode="numeric" min="50" max="250" autofocus>
+                <div class="step-actions">
+                    <button type="button" class="btn btn-primary" onclick="goStep(2)">下一步 →</button>
+                </div>
+            </div>
 
-    <label for="heartbeat">心跳:</label>
-    <input type="number" name="heartbeat" required>
+            <!-- 步驟 2: 低壓 -->
+            <div class="step" id="step-2">
+                <button type="button" class="back-link" onclick="goStep(1)">← 上一步</button>
+                <div class="step-title">低壓是多少？</div>
+                <input type="number" class="step-input" id="lowPressure" name="low_pressure"
+                       placeholder="___" inputmode="numeric" min="30" max="150">
+                <div class="step-actions">
+                    <button type="button" class="btn btn-primary" onclick="goStep(3)">下一步 →</button>
+                </div>
+            </div>
 
-    <label for="record_date">日期:</label>
-    <input type="date" name="record_date" required>
+            <!-- 步驟 3: 心跳 -->
+            <div class="step" id="step-3">
+                <button type="button" class="back-link" onclick="goStep(2)">← 上一步</button>
+                <div class="step-title">心跳是多少？</div>
+                <input type="number" class="step-input" id="heartbeat" name="heartbeat"
+                       placeholder="___" inputmode="numeric" min="30" max="200">
+                <div class="step-actions">
+                    <button type="button" class="btn btn-primary" onclick="goStep(4)">下一步 →</button>
+                </div>
+            </div>
 
-    <label for="record_time">時間:</label>
-    <input type="time" name="record_time" required>
+            <!-- 步驟 4: 確認 -->
+            <div class="step" id="step-4">
+                <button type="button" class="back-link" onclick="goStep(3)">← 上一步</button>
+                <div class="step-title">請確認資料</div>
 
-    <button type="submit">添加記錄</button>
-</form>
+                <div class="confirm-card">
+                    <div class="confirm-row">
+                        <span class="confirm-label">高壓</span>
+                        <span class="confirm-value" id="confirmHigh">--</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="confirm-label">低壓</span>
+                        <span class="confirm-value" id="confirmLow">--</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="confirm-label">心跳</span>
+                        <span class="confirm-value" id="confirmHeart">--</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="confirm-label">日期</span>
+                        <span class="confirm-value" id="confirmDate">--</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="confirm-label">時段</span>
+                        <span class="confirm-value" id="confirmPeriod">--</span>
+                    </div>
+                </div>
 
-        <div class="links">
-            <a href="/records" class="link-button records">查看記錄</a>
-            <a href="/export/excel" class="link-button csv">匯出至excel</a>
+                <div id="bpStatus"></div>
+
+                <div class="step-actions">
+                    <button type="submit" class="btn btn-primary">✓ 確認儲存</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- 成功畫面（隱藏，提交後才顯示） -->
+        <div class="success-screen" id="successScreen">
+            <div class="success-icon">✓</div>
+            <div class="success-title">記錄已儲存！</div>
+            <div class="success-sub">3 秒後可繼續輸入</div>
+            <button class="btn btn-primary" onclick="resetForm()">再記一筆</button>
         </div>
     </div>
+
+    <script>
+        let currentStep = 1;
+        let successTimer = null;
+
+        // 自動填入日期和時段
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            document.getElementById('recordDate').value = today;
+
+            const hour = now.getHours();
+            const isPM = hour >= 12;
+            document.getElementById('timeOfDay').value = isPM ? 'PM' : 'AM';
+        });
+
+        function goStep(n) {
+            // 驗證當前步驟
+            if (n > currentStep) {
+                if (!validateStep(currentStep)) return;
+            }
+
+            // 隱藏所有步驟
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById('step-' + i).classList.remove('active');
+                document.getElementById('dot-' + i).classList.remove('active');
+            }
+
+            currentStep = n;
+
+            // 顯示目標步驟
+            document.getElementById('step-' + n).classList.add('active');
+            document.getElementById('dot-' + n).classList.add('active');
+            document.getElementById('stepLabel').textContent = '步驟 ' + n + '/4';
+
+            // 如果是步驟 4，更新確認內容
+            if (n === 4) {
+                updateConfirm();
+            }
+
+            // 聚焦輸入框
+            setTimeout(function() {
+                const inputs = document.querySelectorAll('.step.active .step-input');
+                if (inputs.length > 0) inputs[0].focus();
+            }, 100);
+        }
+
+        function validateStep(step) {
+            const inputMap = {
+                1: { id: 'highPressure', name: '高壓', min: 50, max: 250 },
+                2: { id: 'lowPressure', name: '低壓', min: 30, max: 150 },
+                3: { id: 'heartbeat', name: '心跳', min: 30, max: 200 }
+            };
+
+            const field = inputMap[step];
+            if (!field) return true;
+
+            const el = document.getElementById(field.id);
+            const val = parseInt(el.value);
+
+            if (!val || isNaN(val)) {
+                alert('請輸入' + field.name);
+                el.focus();
+                return false;
+            }
+
+            if (val < field.min || val > field.max) {
+                alert(field.name + '範圍應在 ' + field.min + ' ~ ' + field.max + ' 之間');
+                el.focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        function updateConfirm() {
+            const high = document.getElementById('highPressure').value;
+            const low = document.getElementById('lowPressure').value;
+            const heart = document.getElementById('heartbeat').value;
+
+            document.getElementById('confirmHigh').textContent = high;
+            document.getElementById('confirmLow').textContent = low;
+            document.getElementById('confirmHeart').textContent = heart;
+
+            // 格式化日期
+            const dateVal = document.getElementById('recordDate').value;
+            if (dateVal) {
+                const d = new Date(dateVal + 'T12:00:00');
+                const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                document.getElementById('confirmDate').textContent =
+                    d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 (' + weekdays[d.getDay()] + ')';
+            }
+
+            const isPM = document.getElementById('timeOfDay').value === 'PM';
+            document.getElementById('confirmPeriod').textContent = isPM ? '下午' : '上午';
+
+            // 血壓分級
+            const hp = parseInt(high);
+            const lp = parseInt(low);
+            const statusEl = document.getElementById('bpStatus');
+
+            let statusClass, statusText;
+            if (hp < 120 && lp < 80) {
+                statusClass = 'bp-normal';
+                statusText = '正常';
+            } else if (hp < 130 && lp < 80) {
+                statusClass = 'bp-elevated';
+                statusText = '偏高';
+            } else if (hp < 140 || lp < 90) {
+                statusClass = 'bp-elevated';
+                statusText = '偏高';
+            } else {
+                statusClass = 'bp-high';
+                statusText = '高血壓';
+            }
+
+            statusEl.className = 'bp-status ' + statusClass;
+            statusEl.textContent = statusText;
+        }
+
+        // 表單提交 - AJAX 避免頁面跳轉
+        document.getElementById('bpForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            }).then(function(resp) {
+                if (resp.ok) {
+                    showSuccess();
+                } else {
+                    alert('儲存失敗，請重試');
+                }
+            }).catch(function() {
+                alert('網路錯誤，請重試');
+            });
+        });
+
+        function showSuccess() {
+            document.getElementById('bpForm').style.display = 'none';
+            document.querySelector('.progress-container').style.display = 'none';
+            document.getElementById('successScreen').classList.add('active');
+
+            // 3 秒自動重置
+            successTimer = setTimeout(resetForm, 3000);
+        }
+
+        function resetForm() {
+            if (successTimer) clearTimeout(successTimer);
+            document.getElementById('bpForm').style.display = 'flex';
+            document.querySelector('.progress-container').style.display = 'block';
+            document.getElementById('successScreen').classList.remove('active');
+            document.getElementById('bpForm').reset();
+
+            // 重置到步驟 1
+            currentStep = 0;
+            goStep(1);
+        }
+
+        // 鍵盤 Enter 跳到下一步
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const activeStep = document.querySelector('.step.active');
+                if (activeStep && activeStep.id !== 'step-4') {
+                    e.preventDefault();
+                    goStep(currentStep + 1);
+                }
+            }
+        });
+    </script>
 </body>
 </html>
