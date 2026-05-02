@@ -1,149 +1,99 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>血壓記錄 </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>血壓記錄</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/styles.css">
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        h2 {
-            color: #555;
-            margin-top: 20px;
-            text-align: center;
-        }
-        .month-selector {
-            text-align: center;
-            margin: 20px 0;
-        }
-        select {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
-            cursor: pointer;
-        }
-        .table-container {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-        }
-        table {
-            width: 90%;
-            border-collapse: collapse;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            background-color: #fff;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: center;
-        }
-        th {
-            background-color: #808080; /* Changed to grey */
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .navigation {
-            text-align: center;
-            margin-top: 20px;
-        }
-        a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #4CAF50;
-            font-weight: bold;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        button {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 0 5px; /* Space between buttons */
-        }
-        button:hover {
-            background-color: #d32f2f;
-        }
-    </style>
 </head>
 <body>
-    <h1>血壓記錄 </h1>
+    <div class="container">
+        <!-- 頂部導航 -->
+        <div class="top-nav">
+            <a href="/" class="nav-btn">← 返回</a>
+            <h1>血壓記錄</h1>
+            <a href="/export/excel" class="nav-btn" style="font-size:15px;">📥 匯出</a>
+        </div>
 
-    <div class="navigation">
-        <a href="/" class="link-button records">返回</a>
-        <a href="/export/excel" class="link-button csv">匯出至excel</a>
+        <%
+            // 取得所有月份並排序
+            var months = Object.keys(groupedRecords).sort();
+            var currentIdx = months.indexOf(selectedMonth);
+            if (currentIdx === -1) currentIdx = months.length - 1;
+            var currentMonth = months.length > 0 ? months[currentIdx] : null;
+            var prevMonth = currentIdx > 0 ? months[currentIdx - 1] : null;
+            var nextMonth = currentIdx < months.length - 1 ? months[currentIdx + 1] : null;
+
+            // 格式化月份顯示
+            function formatMonth(ym) {
+                return ym ? ym.replace('-', '年') + '月' : '';
+            }
+        %>
+
+        <% if (currentMonth) { %>
+        <!-- 月份導航 -->
+        <div class="month-nav">
+            <% if (prevMonth) { %>
+                <a href="/records?yearMonth=<%= prevMonth %>" class="arrow-btn">〈</a>
+            <% } else { %>
+                <span class="arrow-btn" style="visibility:hidden;">〈</span>
+            <% } %>
+            <span class="month-label"><%= formatMonth(currentMonth) %></span>
+            <% if (nextMonth) { %>
+                <a href="/records?yearMonth=<%= nextMonth %>" class="arrow-btn">〉</a>
+            <% } else { %>
+                <span class="arrow-btn" style="visibility:hidden;">〉</span>
+            <% } %>
+        </div>
+        <% } %>
+
+        <!-- 記錄卡片列表 -->
+        <% if (groupedRecords[currentMonth] && groupedRecords[currentMonth].length) { %>
+            <% groupedRecords[currentMonth].forEach(function(record) {
+                var hp = parseInt(record.high_pressure);
+                var lp = parseInt(record.low_pressure);
+                var borderClass = '';
+                if (hp >= 140 || lp >= 90) {
+                    borderClass = 'bp-high-border';
+                } else if (hp >= 120 || lp >= 80) {
+                    borderClass = 'bp-elevated-border';
+                } else {
+                    borderClass = 'bp-normal-border';
+                }
+            %>
+                <div class="record-card <%= borderClass %>">
+                    <div class="card-header">
+                        <span><%= record.formattedDate %></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-metric">
+                            <span class="metric-value"><%= record.high_pressure %></span>
+                            <span class="metric-label">高壓</span>
+                        </div>
+                        <div class="card-metric">
+                            <span class="metric-value"><%= record.low_pressure %></span>
+                            <span class="metric-label">低壓</span>
+                        </div>
+                        <div class="card-metric">
+                            <span class="metric-value"><%= record.heartbeat %></span>
+                            <span class="metric-label">心跳</span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="/modify/<%= record.id %>" class="btn btn-secondary">修改</a>
+                        <form action="/delete/<%= record.id %>" method="POST" style="display:inline;"
+                              onsubmit="return confirm('確定要刪除這條記錄嗎？');">
+                            <button type="submit" class="btn btn-danger">刪除</button>
+                        </form>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="empty-state">
+                沒有記錄
+            </div>
+        <% } %>
     </div>
-
-    <div class="month-selector">
-        <form action="/records" method="GET">
-            <select name="yearMonth" onchange="this.form.submit()">
-                <% Object.keys(groupedRecords).forEach(yearMonth => { %>
-                    <option value="<%= yearMonth %>" <%= yearMonth === selectedMonth ? 'selected' : '' %>><%= yearMonth.replace('-', '年') %>月</option>
-                <% }); %>
-            </select>
-        </form>
-    </div>
-
-    <h2><%= selectedMonth ? selectedMonth.replace('-', '年') : '無記錄' %>月</h2>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>高壓</th>
-                    <th>低壓</th>
-                    <th>心跳</th>
-                    <th>記錄時間</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (groupedRecords[selectedMonth] && groupedRecords[selectedMonth].length) { %>
-                    <% groupedRecords[selectedMonth].forEach(record => { %>
-                        <tr>
-                            <td><%= record.high_pressure %></td>
-                            <td><%= record.low_pressure %></td>
-                            <td><%= record.heartbeat %></td>
-                            <td><%= record.formattedDate %></td>
-                            <td>
-                                <form action="/modify/<%= record.id %>" method="GET" style="display:inline;">
-                                    <button type="submit">修改</button>
-                                </form>
-                                <form action="/delete/<%= record.id %>" method="POST" style="display:inline;">
-                                    <button type="submit" onclick="return confirm('確定要刪除這條記錄嗎？');">刪除</button>
-                                </form>
-                            </td>
-                        </tr>
-                    <% }); %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="5">沒有記錄</td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-    </div>
-
 </body>
 </html>
