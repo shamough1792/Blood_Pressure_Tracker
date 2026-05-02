@@ -37,7 +37,10 @@ app.post('/add', (req, res) => {
 
     // Auto-detect date and time if not provided (elderly-friendly mode)
     const now = new Date();
-    const date = record_date || now.toISOString().split('T')[0];
+    const y = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const date = record_date || `${y}-${mo}-${d}`;
     const hour = now.getHours();
     const isPM = time_of_day === 'PM' || (time_of_day !== 'AM' && hour >= 12);
     const recordedAt = isPM
@@ -107,7 +110,10 @@ app.post('/update/:id', (req, res) => {
 
     // Auto-detect date and time if not provided
     const now = new Date();
-    const date = record_date || now.toISOString().split('T')[0];
+    const y = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const date = record_date || `${y}-${mo}-${d}`;
     const hour = now.getHours();
     const isPM = time_of_day === 'PM' || (time_of_day !== 'AM' && hour >= 12);
     const recordedAt = isPM
