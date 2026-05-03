@@ -1,35 +1,12 @@
 services:
-  db:
-    image: mariadb:10.11
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: blood_test
-      MYSQL_USER: tracker_user
-      MYSQL_PASSWORD: '!Lkw988667'
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
   app:
     build: .
     ports:
       - "3000:3000"
     environment:
-      DB_HOST: db
-      DB_USER: tracker_user
-      DB_PASSWORD: '!Lkw988667'
-      DB_NAME: blood_test
-      TITLE_SUFFIX: ${TITLE_SUFFIX:-}
-    depends_on:
-      db:
-        condition: service_healthy
+      DB_HOST: 
+      DB_USER: 
+      DB_PASSWORD: ''
+      DB_NAME: 
+      TITLE_SUFFIX: 
     restart: unless-stopped
-
-volumes:
-  db_data:
