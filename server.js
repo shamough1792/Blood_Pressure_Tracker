@@ -4,7 +4,7 @@ const mysql = require('mysql2');
 const ejs = require('ejs');
 const path = require('path');
 const fs = require('fs');
-const xlsx = require('xlsx');
+const ExcelJS = require('exceljs');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -168,7 +168,7 @@ function formatDateForFilename(date) {
 
 // Export to Excel
 app.get('/export/excel', (req, res) => {
-    db.query('SELECT * FROM records ORDER BY recorded_at ASC', (err, results) => {
+    db.query('SELECT * FROM records ORDER BY recorded_at ASC', async (err, results) => {
         if (err) throw err;
 
         // Check if there are no records
@@ -176,61 +176,104 @@ app.get('/export/excel', (req, res) => {
             return res.send(`
                 <script>
                     alert('沒有記錄可供匯出');
-                    window.history.back(); // Go back to the previous page
+                    window.history.back();
                 </script>
-            `); // Send a JavaScript response
+            `);
         }
 
         // Group records by year and month
         const groupedRecords = results.reduce((acc, record) => {
             const date = new Date(record.recorded_at);
-            const yearMonth = `${date.getFullYear()}年${date.getMonth() + 1}月`; // Format: YYYY年MM月
+            const yearMonth = `${date.getFullYear()}年${date.getMonth() + 1}月`;
 
             if (!acc[yearMonth]) {
                 acc[yearMonth] = [];
             }
             acc[yearMonth].push({
-                高壓: record.high_pressure,
-                低壓: record.low_pressure,
-                心跳: record.heartbeat,
-                記錄時間: formatDate(date) // Format the date for display
+                high_pressure: record.high_pressure,
+                low_pressure: record.low_pressure,
+                heartbeat: record.heartbeat,
+                recorded_at: record.recorded_at
             });
             return acc;
         }, {});
 
-        // Create a new workbook
-        const workbook = xlsx.utils.book_new();
+        // Create workbook with exceljs
+        const workbook = new ExcelJS.Workbook();
 
-        // Add each month as a separate sheet
         Object.keys(groupedRecords).forEach(month => {
-            const worksheet = xlsx.utils.json_to_sheet(groupedRecords[month]);
-            xlsx.utils.book_append_sheet(workbook, worksheet, month);
+            const sheet = workbook.addWorksheet(month);
+
+            // Column headers
+            sheet.columns = [
+                { header: '高壓', key: 'high_pressure', width: 10 },
+                { header: '低壓', key: 'low_pressure', width: 10 },
+                { header: '心跳', key: 'heartbeat', width: 10 },
+                { header: '記錄時間', key: 'recorded_at', width: 30 }
+            ];
+
+            // Style header row
+            const headerRow = sheet.getRow(1);
+            headerRow.font = { bold: true, size: 12 };
+            headerRow.alignment = { horizontal: 'center' };
+            headerRow.height = 24;
+
+            // Add data rows with color coding
+            groupedRecords[month].forEach(record => {
+                const hp = parseInt(record.high_pressure);
+                const lp = parseInt(record.low_pressure);
+                const date = new Date(record.recorded_at);
+                const formattedDate = formatDate(date);
+
+                const row = sheet.addRow({
+                    high_pressure: record.high_pressure,
+                    low_pressure: record.low_pressure,
+                    heartbeat: record.heartbeat,
+                    recorded_at: formattedDate
+                });
+
+                row.alignment = { horizontal: 'center' };
+                row.height = 22;
+
+                // Determine color based on blood pressure
+                let fillColor;
+                if (hp >= 140 || lp >= 90) {
+                    fillColor = 'FFCDD2'; // red
+                } else if (hp < 120 && lp < 80) {
+                    fillColor = 'C8E6C9'; // green
+                } else {
+                    fillColor = 'FFF9C4'; // yellow
+                }
+
+                // Apply color to high pressure and low pressure cells
+                [1, 2].forEach(cellIdx => {
+                    row.getCell(cellIdx).fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: fillColor }
+                    };
+                });
+            });
         });
 
-        // Define the filename
+        // Write to file
         const today = new Date();
         const formattedDate = formatDateForFilename(today);
         const excelFilename = `血壓記錄_${formattedDate}.xlsx`;
-
-        // Write the workbook to a file
         const excelPath = path.join(__dirname, excelFilename);
-        xlsx.writeFile(workbook, excelPath);
 
-        // Download the Excel file
-        res.download(excelPath, excelFilename, (err) => {
-            if (err) {
-                console.error('Error downloading the file:', err);
-            } else {
-                // Optionally delete the Excel file after downloading
-                fs.unlink(excelPath, (err) => {
-                    if (err) {
-                        console.error('Error deleting the file:', err);
-                    } else {
-                        console.log('Excel file deleted successfully:', excelPath);
-                    }
-                });
-            }
-        });
+        try {
+            await workbook.xlsx.writeFile(excelPath);
+            res.download(excelPath, excelFilename, (err) => {
+                if (err) {
+                    console.error('Error downloading the file:', err);
+                }
+                fs.unlink(excelPath, () => {});
+            });
+        } catch (writeErr) {
+            console.error('Error writing Excel file:', writeErr);
+            res.status(500).send('匯出 Excel 失敗');
+        }
     });
 });
 
