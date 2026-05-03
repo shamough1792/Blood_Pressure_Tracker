@@ -171,7 +171,6 @@ app.get('/export/excel', (req, res) => {
     db.query('SELECT * FROM records ORDER BY recorded_at ASC', async (err, results) => {
         if (err) throw err;
 
-        // Check if there are no records
         if (results.length === 0) {
             return res.send(`
                 <script>
@@ -181,82 +180,159 @@ app.get('/export/excel', (req, res) => {
             `);
         }
 
-        // Group records by year and month
-        const groupedRecords = results.reduce((acc, record) => {
-            const date = new Date(record.recorded_at);
-            const yearMonth = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+        // Helper to get BP color
+        function getBpColor(hp, lp) {
+            if (hp >= 140 || lp >= 90) return 'FFCDD2'; // red
+            if (hp < 120 && lp < 80) return 'C8E6C9';  // green
+            return 'FFF9C4'; // yellow
+        }
 
-            if (!acc[yearMonth]) {
-                acc[yearMonth] = [];
-            }
-            acc[yearMonth].push({
-                high_pressure: record.high_pressure,
-                low_pressure: record.low_pressure,
-                heartbeat: record.heartbeat,
-                recorded_at: record.recorded_at
-            });
-            return acc;
-        }, {});
+        // Group records by year-month, then by day and period
+        const months = {};
+        results.forEach(record => {
+            const d = new Date(record.recorded_at);
+            const ym = `${d.getFullYear()}年${d.getMonth() + 1}月`;
+            const day = d.getDate();
+            const period = d.getHours() < 12 ? '早' : '晚';
 
-        // Create workbook with exceljs
-        const workbook = new ExcelJS.Workbook();
-
-        Object.keys(groupedRecords).forEach(month => {
-            const sheet = workbook.addWorksheet(month);
-
-            // Column headers
-            sheet.columns = [
-                { header: '高壓', key: 'high_pressure', width: 10 },
-                { header: '低壓', key: 'low_pressure', width: 10 },
-                { header: '心跳', key: 'heartbeat', width: 10 },
-                { header: '記錄時間', key: 'recorded_at', width: 30 }
-            ];
-
-            // Style header row
-            const headerRow = sheet.getRow(1);
-            headerRow.font = { bold: true, size: 12 };
-            headerRow.alignment = { horizontal: 'center' };
-            headerRow.height = 24;
-
-            // Add data rows with color coding
-            groupedRecords[month].forEach(record => {
-                const hp = parseInt(record.high_pressure);
-                const lp = parseInt(record.low_pressure);
-                const date = new Date(record.recorded_at);
-                const formattedDate = formatDate(date);
-
-                const row = sheet.addRow({
-                    high_pressure: record.high_pressure,
-                    low_pressure: record.low_pressure,
-                    heartbeat: record.heartbeat,
-                    recorded_at: formattedDate
-                });
-
-                row.alignment = { horizontal: 'center' };
-                row.height = 22;
-
-                // Determine color based on blood pressure
-                let fillColor;
-                if (hp >= 140 || lp >= 90) {
-                    fillColor = 'FFCDD2'; // red
-                } else if (hp < 120 && lp < 80) {
-                    fillColor = 'C8E6C9'; // green
-                } else {
-                    fillColor = 'FFF9C4'; // yellow
-                }
-
-                // Apply color to high pressure and low pressure cells
-                [1, 2].forEach(cellIdx => {
-                    row.getCell(cellIdx).fill = {
-                        type: 'pattern',
-                        pattern: 'solid',
-                        fgColor: { argb: fillColor }
-                    };
-                });
-            });
+            if (!months[ym]) months[ym] = {};
+            if (!months[ym][day]) months[ym][day] = {};
+            months[ym][day][period] = {
+                high: record.high_pressure,
+                low: record.low_pressure,
+                heart: record.heartbeat
+            };
         });
 
-        // Write to file
+        const workbook = new ExcelJS.Workbook();
+
+        Object.keys(months).sort((a, b) => {
+            const [ya, ma] = a.replace('年', '-').replace('月', '').split('-');
+            const [yb, mb] = b.replace('年', '-').replace('月', '').split('-');
+            return ya - yb || ma - mb;
+        }).forEach(month => {
+            const sheet = workbook.addWorksheet(month);
+            const data = months[month];
+
+            // Column widths A-I
+            for (let c = 1; c <= 11; c++) sheet.getColumn(c).width = 7;
+            sheet.getColumn(1).width = 5;  // day
+            sheet.getColumn(2).width = 5;  // time
+            sheet.getColumn(6).width = 5;  // right day
+            sheet.getColumn(7).width = 5;  // right time
+
+            // Row 1-2: Title
+            sheet.mergeCells('A1:K2');
+            const titleRow = sheet.getRow(1);
+            titleRow.getCell(1).value = '血壓記錄表';
+            titleRow.getCell(1).font = { bold: true, size: 16 };
+            titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            titleRow.height = 36;
+
+            // Row 3: Month
+            sheet.mergeCells('A3:K3');
+            const monthRow = sheet.getRow(3);
+            monthRow.getCell(1).value = `(${month}) 月份`;
+            monthRow.getCell(1).font = { bold: true, size: 12 };
+            monthRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+            // Row 4: Headers
+            const headerRow = sheet.getRow(4);
+            const hdrs = ['', '時間', '上壓', '下壓', '心跳', '', '時間', '上壓', '下壓'];
+            for (let i = 0; i < 9; i++) {
+                const cell = headerRow.getCell(i + 1);
+                cell.value = hdrs[i];
+                cell.font = { bold: true, size: 10 };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            }
+            headerRow.height = 22;
+
+            // Data rows: days 1-15 (left) + 16-31 (right), each with 早/晚
+            let rowNum = 5;
+            for (let ld = 1; ld <= 15; ld++) {
+                const rd = ld + 15;
+
+                // 早 row
+                const rowE = sheet.getRow(rowNum);
+                const valsE = ['', '', '', '', '', '', '', '', ''];
+                valsE[0] = `${ld}號`;
+                if (rd <= 31) valsE[5] = `${rd}號`;
+
+                if (data[ld] && data[ld]['早']) {
+                    valsE[1] = '早';
+                    valsE[2] = data[ld]['早'].high;
+                    valsE[3] = data[ld]['早'].low;
+                    valsE[4] = data[ld]['早'].heart;
+                }
+                if (rd <= 31 && data[rd] && data[rd]['早']) {
+                    valsE[6] = '早';
+                    valsE[7] = data[rd]['早'].high;
+                    valsE[8] = data[rd]['早'].low;
+                }
+
+                for (let i = 0; i < 9; i++) {
+                    const cell = rowE.getCell(i + 1);
+                    cell.value = valsE[i];
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.font = { size: 10 };
+                }
+
+                // Color left BP
+                if (data[ld] && data[ld]['早']) {
+                    const c = getBpColor(data[ld]['早'].high, data[ld]['早'].low);
+                    rowE.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
+                    rowE.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
+                }
+                // Color right BP
+                if (rd <= 31 && data[rd] && data[rd]['早']) {
+                    const c = getBpColor(data[rd]['早'].high, data[rd]['早'].low);
+                    rowE.getCell(8).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
+                    rowE.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
+                }
+                rowE.height = 20;
+                rowNum++;
+
+                // 晚 row
+                const rowL = sheet.getRow(rowNum);
+                const valsL = ['', '', '', '', '', '', '', '', ''];
+                valsL[0] = `${ld}號`;
+                if (rd <= 31) valsL[5] = `${rd}號`;
+
+                if (data[ld] && data[ld]['晚']) {
+                    valsL[1] = '晚';
+                    valsL[2] = data[ld]['晚'].high;
+                    valsL[3] = data[ld]['晚'].low;
+                    valsL[4] = data[ld]['晚'].heart;
+                }
+                if (rd <= 31 && data[rd] && data[rd]['晚']) {
+                    valsL[6] = '晚';
+                    valsL[7] = data[rd]['晚'].high;
+                    valsL[8] = data[rd]['晚'].low;
+                }
+
+                for (let i = 0; i < 9; i++) {
+                    const cell = rowL.getCell(i + 1);
+                    cell.value = valsL[i];
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.font = { size: 10 };
+                }
+
+                if (data[ld] && data[ld]['晚']) {
+                    const c = getBpColor(data[ld]['晚'].high, data[ld]['晚'].low);
+                    rowL.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
+                    rowL.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
+                }
+                if (rd <= 31 && data[rd] && data[rd]['晚']) {
+                    const c = getBpColor(data[rd]['晚'].high, data[rd]['晚'].low);
+                    rowL.getCell(8).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
+                    rowL.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
+                }
+                rowL.height = 20;
+                rowNum++;
+            }
+        });
+
+        // Write file
         const today = new Date();
         const formattedDate = formatDateForFilename(today);
         const excelFilename = `血壓記錄_${formattedDate}.xlsx`;
@@ -265,9 +341,7 @@ app.get('/export/excel', (req, res) => {
         try {
             await workbook.xlsx.writeFile(excelPath);
             res.download(excelPath, excelFilename, (err) => {
-                if (err) {
-                    console.error('Error downloading the file:', err);
-                }
+                if (err) console.error('Error downloading the file:', err);
                 fs.unlink(excelPath, () => {});
             });
         } catch (writeErr) {
