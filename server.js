@@ -236,6 +236,14 @@ app.get('/export/excel', (req, res) => {
             monthRow.getCell(1).font = { bold: true, size: 12 };
             monthRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
 
+            // Thin border style
+            const thinBorder = {
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+
             // Row 4: Headers
             const headerRow = sheet.getRow(4);
             const hdrs = ['', '時間', '上壓', '下壓', '心跳', '', '時間', '上壓', '下壓'];
@@ -244,6 +252,7 @@ app.get('/export/excel', (req, res) => {
                 cell.value = hdrs[i];
                 cell.font = { bold: true, size: 10 };
                 cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = thinBorder;
             }
             headerRow.height = 22;
 
@@ -256,16 +265,18 @@ app.get('/export/excel', (req, res) => {
                 const rowE = sheet.getRow(rowNum);
                 const valsE = ['', '', '', '', '', '', '', '', ''];
                 valsE[0] = `${ld}號`;
-                if (rd <= 31) valsE[5] = `${rd}號`;
+                valsE[1] = '早';  // always show
+                if (rd <= 31) {
+                    valsE[5] = `${rd}號`;
+                    valsE[6] = '早';  // always show
+                }
 
                 if (data[ld] && data[ld]['早']) {
-                    valsE[1] = '早';
                     valsE[2] = data[ld]['早'].high;
                     valsE[3] = data[ld]['早'].low;
                     valsE[4] = data[ld]['早'].heart;
                 }
                 if (rd <= 31 && data[rd] && data[rd]['早']) {
-                    valsE[6] = '早';
                     valsE[7] = data[rd]['早'].high;
                     valsE[8] = data[rd]['早'].low;
                 }
@@ -275,6 +286,7 @@ app.get('/export/excel', (req, res) => {
                     cell.value = valsE[i];
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.font = { size: 10 };
+                    cell.border = thinBorder;
                 }
 
                 // Color left BP
@@ -296,16 +308,18 @@ app.get('/export/excel', (req, res) => {
                 const rowL = sheet.getRow(rowNum);
                 const valsL = ['', '', '', '', '', '', '', '', ''];
                 valsL[0] = `${ld}號`;
-                if (rd <= 31) valsL[5] = `${rd}號`;
+                valsL[1] = '晚';  // always show
+                if (rd <= 31) {
+                    valsL[5] = `${rd}號`;
+                    valsL[6] = '晚';  // always show
+                }
 
                 if (data[ld] && data[ld]['晚']) {
-                    valsL[1] = '晚';
                     valsL[2] = data[ld]['晚'].high;
                     valsL[3] = data[ld]['晚'].low;
                     valsL[4] = data[ld]['晚'].heart;
                 }
                 if (rd <= 31 && data[rd] && data[rd]['晚']) {
-                    valsL[6] = '晚';
                     valsL[7] = data[rd]['晚'].high;
                     valsL[8] = data[rd]['晚'].low;
                 }
@@ -315,6 +329,7 @@ app.get('/export/excel', (req, res) => {
                     cell.value = valsL[i];
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.font = { size: 10 };
+                    cell.border = thinBorder;
                 }
 
                 if (data[ld] && data[ld]['晚']) {
