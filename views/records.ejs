@@ -15,7 +15,7 @@
         <!-- 頂部導航 -->
         <div class="top-nav">
             <a href="/" class="nav-btn">← 返回</a>
-            <h1>血壓記錄</h1>
+            <h1>血壓記錄<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></h1>
             <a href="/export/excel" class="nav-btn" style="font-size:15px;">📥 匯出</a>
         </div>
 

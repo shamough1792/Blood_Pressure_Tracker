@@ -14,7 +14,7 @@
     <div class="container">
         <!-- 頂部導航 -->
         <div class="top-nav">
-            <h1>血壓記錄</h1>
+            <h1>血壓記錄<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></h1>
             <div style="display:flex;gap:4px;">
                 <a href="/records" class="nav-btn">記錄</a>
             </div>
