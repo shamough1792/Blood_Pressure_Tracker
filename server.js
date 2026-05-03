@@ -7,14 +7,14 @@ const fs = require('fs');
 const xlsx = require('xlsx');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Database connection
 const db = mysql.createConnection({
-    host: '192.168.1.222',
-    user: 'tracker_user', // replace with your MariaDB username
-    password: '!Lkw988667', // replace with your MariaDB password
-    database: 'blood_test'
+    host: process.env.DB_HOST || '192.168.1.222',
+    user: process.env.DB_USER || 'tracker_user',
+    password: process.env.DB_PASSWORD || '!Lkw988667',
+    database: process.env.DB_NAME || 'blood_test'
 });
 
 db.connect(err => {
@@ -29,7 +29,7 @@ app.use(express.static('public'));
 
 // GET route for the index page
 app.get('/', (req, res) => {
-    res.render('index', { successMessage: null });
+    res.render('index', { successMessage: null, titleSuffix: process.env.TITLE_SUFFIX || '' });
 });
 
 app.post('/add', (req, res) => {
@@ -53,7 +53,7 @@ app.post('/add', (req, res) => {
             console.error('Error inserting record:', err);
             return res.status(500).send('Error adding record');
         }
-        res.render('index', { successMessage: '血壓記錄已成功添加！' });
+        res.render('index', { successMessage: '血壓記錄已成功添加！', titleSuffix: process.env.TITLE_SUFFIX || '' });
     });
 });
 
@@ -82,7 +82,7 @@ app.get('/records', (req, res) => {
         const selectedMonth = req.query.yearMonth || (Object.keys(groupedRecords).length ? Object.keys(groupedRecords)[0] : null);
 
         // Pass groupedRecords and selectedMonth to the view
-        res.render('records', { groupedRecords, selectedMonth });
+        res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '' });
     });
 });
 
@@ -99,7 +99,7 @@ app.get('/modify/:id', (req, res) => {
         }
 
         const record = results[0];
-        res.render('modify', { record });
+        res.render('modify', { record, titleSuffix: process.env.TITLE_SUFFIX || '' });
     });
 });
 
