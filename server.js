@@ -214,15 +214,14 @@ app.get('/export/excel', (req, res) => {
             const sheet = workbook.addWorksheet(month);
             const data = months[month];
 
-            // Column widths A-I
-            for (let c = 1; c <= 11; c++) sheet.getColumn(c).width = 7;
-            sheet.getColumn(1).width = 5;  // day
-            sheet.getColumn(2).width = 5;  // time
-            sheet.getColumn(6).width = 5;  // right day
-            sheet.getColumn(7).width = 5;  // right time
+            // Column widths A-J
+            for (let c = 1; c <= 10; c++) sheet.getColumn(c).width = 7;
+            sheet.getColumn(1).width = 5;
+            sheet.getColumn(2).width = 5;
+            sheet.getColumn(6).width = 5;
 
-            // Row 1-2: Title
-            sheet.mergeCells('A1:K2');
+            // Row 1: Title (merged A-J)
+            sheet.mergeCells('A1:J2');
             const titleRow = sheet.getRow(1);
             titleRow.getCell(1).value = '血壓記錄表';
             titleRow.getCell(1).font = { bold: true, size: 16 };
@@ -230,24 +229,22 @@ app.get('/export/excel', (req, res) => {
             titleRow.height = 36;
 
             // Row 3: Month
-            sheet.mergeCells('A3:K3');
+            sheet.mergeCells('A3:J3');
             const monthRow = sheet.getRow(3);
             monthRow.getCell(1).value = `(${month}) 月份`;
             monthRow.getCell(1).font = { bold: true, size: 12 };
             monthRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
 
-            // Thin border style
+            // Thin border
             const thinBorder = {
-                top: { style: 'thin' },
-                bottom: { style: 'thin' },
-                left: { style: 'thin' },
-                right: { style: 'thin' }
+                top: { style: 'thin' }, bottom: { style: 'thin' },
+                left: { style: 'thin' }, right: { style: 'thin' }
             };
 
-            // Row 4: Headers
+            // Row 4: Headers (10 cols: A-J)
             const headerRow = sheet.getRow(4);
-            const hdrs = ['', '時間', '上壓', '下壓', '心跳', '', '時間', '上壓', '下壓'];
-            for (let i = 0; i < 9; i++) {
+            const hdrs = ['', '時間', '上壓', '下壓', '心跳', '', '時間', '上壓', '下壓', '心跳'];
+            for (let i = 0; i < 10; i++) {
                 const cell = headerRow.getCell(i + 1);
                 cell.value = hdrs[i];
                 cell.font = { bold: true, size: 10 };
@@ -256,77 +253,72 @@ app.get('/export/excel', (req, res) => {
             }
             headerRow.height = 22;
 
-            // Data rows: days 1-15 (left) + 16-31 (right), each with 早/晚
-            let rowNum = 5;
+            // Data rows: 10 cols [dayL, time, 上, 下, 心, dayR, time, 上, 下, 心]
+            let startRow = 5;
             for (let ld = 1; ld <= 15; ld++) {
                 const rd = ld + 15;
 
-                // 早 row
-                const rowE = sheet.getRow(rowNum);
-                const valsE = ['', '', '', '', '', '', '', '', ''];
-                valsE[0] = `${ld}號`;
-                valsE[1] = '早';  // always show
-                if (rd <= 31) {
-                    valsE[5] = `${rd}號`;
-                    valsE[6] = '早';  // always show
-                }
+                // --- 早 row ---
+                const rowE = sheet.getRow(startRow);
+                const vE = ['', '', '', '', '', '', '', '', '', ''];
+                vE[0] = `${ld}號`;
+                vE[1] = '早';
+                vE[5] = rd <= 31 ? `${rd}號` : '';
+                vE[6] = rd <= 31 ? '早' : '';
 
                 if (data[ld] && data[ld]['早']) {
-                    valsE[2] = data[ld]['早'].high;
-                    valsE[3] = data[ld]['早'].low;
-                    valsE[4] = data[ld]['早'].heart;
+                    vE[2] = data[ld]['早'].high;
+                    vE[3] = data[ld]['早'].low;
+                    vE[4] = data[ld]['早'].heart;
                 }
                 if (rd <= 31 && data[rd] && data[rd]['早']) {
-                    valsE[7] = data[rd]['早'].high;
-                    valsE[8] = data[rd]['早'].low;
+                    vE[7] = data[rd]['早'].high;
+                    vE[8] = data[rd]['早'].low;
+                    vE[9] = data[rd]['早'].heart;
                 }
 
-                for (let i = 0; i < 9; i++) {
+                for (let i = 0; i < 10; i++) {
                     const cell = rowE.getCell(i + 1);
-                    cell.value = valsE[i];
+                    cell.value = vE[i];
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.font = { size: 10 };
                     cell.border = thinBorder;
                 }
 
-                // Color left BP
                 if (data[ld] && data[ld]['早']) {
                     const c = getBpColor(data[ld]['早'].high, data[ld]['早'].low);
                     rowE.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
                     rowE.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
                 }
-                // Color right BP
                 if (rd <= 31 && data[rd] && data[rd]['早']) {
                     const c = getBpColor(data[rd]['早'].high, data[rd]['早'].low);
                     rowE.getCell(8).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
                     rowE.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
                 }
                 rowE.height = 20;
-                rowNum++;
 
-                // 晚 row
-                const rowL = sheet.getRow(rowNum);
-                const valsL = ['', '', '', '', '', '', '', '', ''];
-                valsL[0] = `${ld}號`;
-                valsL[1] = '晚';  // always show
-                if (rd <= 31) {
-                    valsL[5] = `${rd}號`;
-                    valsL[6] = '晚';  // always show
-                }
+                // --- 晚 row ---
+                const rowL = sheet.getRow(startRow + 1);
+                const vL = ['', '', '', '', '', '', '', '', '', ''];
+                vL[0] = `${ld}號`;
+                vL[1] = '晚';
+                vL[5] = rd <= 31 ? `${rd}號` : '';
+                vL[6] = rd <= 31 ? '晚' : '';
 
                 if (data[ld] && data[ld]['晚']) {
-                    valsL[2] = data[ld]['晚'].high;
-                    valsL[3] = data[ld]['晚'].low;
-                    valsL[4] = data[ld]['晚'].heart;
+                    vL[2] = data[ld]['晚'].high;
+                    vL[3] = data[ld]['晚'].low;
+                    vL[4] = data[ld]['晚'].heart;
                 }
                 if (rd <= 31 && data[rd] && data[rd]['晚']) {
-                    valsL[7] = data[rd]['晚'].high;
-                    valsL[8] = data[rd]['晚'].low;
+                    vL[7] = data[rd]['晚'].high;
+                    vL[8] = data[rd]['晚'].low;
+                    vL[9] = data[rd]['晚'].heart;
                 }
 
-                for (let i = 0; i < 9; i++) {
+                for (let i = 0; i < 10; i++) {
                     const cell = rowL.getCell(i + 1);
-                    cell.value = valsL[i];
+                    cell.value = vL[i];
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.font = { size: 10 };
                     cell.border = thinBorder;
@@ -343,7 +335,14 @@ app.get('/export/excel', (req, res) => {
                     rowL.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c } };
                 }
                 rowL.height = 20;
-                rowNum++;
+
+                // Merge day number cells vertically
+                sheet.mergeCells(`A${startRow}:A${startRow + 1}`);
+                if (rd <= 31) {
+                    sheet.mergeCells(`F${startRow}:F${startRow + 1}`);
+                }
+
+                startRow += 2;
             }
         });
 
