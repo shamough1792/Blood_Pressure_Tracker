@@ -366,6 +366,26 @@ body {
     border-color: #2d6a4f;
 }
 
+.month-select {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a1a2e;
+    background: #fff;
+    border: 2px solid #d0d7de;
+    border-radius: 12px;
+    padding: 10px 32px 10px 16px;
+    cursor: pointer;
+    min-width: 160px;
+    text-align: center;
+    appearance: auto;
+    outline: none;
+}
+
+.month-select:focus {
+    border-color: #2d6a4f;
+    box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.15);
+}
+
 .record-card {
     background: #fff;
     border-radius: 16px;

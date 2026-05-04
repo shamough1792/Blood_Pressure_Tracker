@@ -42,7 +42,11 @@
             <% } else { %>
                 <span class="arrow-btn" style="visibility:hidden;">〈</span>
             <% } %>
-            <span class="month-label"><%= formatMonth(currentMonth) %></span>
+            <select class="month-select" onchange="location=this.value">
+                <% months.forEach(function(m) { %>
+                    <option value="/records?yearMonth=<%= m %>" <%= m === currentMonth ? 'selected' : '' %>><%= formatMonth(m) %></option>
+                <% }); %>
+            </select>
             <% if (nextMonth) { %>
                 <a href="/records?yearMonth=<%= nextMonth %>" class="arrow-btn">〉</a>
             <% } else { %>
