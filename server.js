@@ -349,7 +349,7 @@ app.get('/export/excel', (req, res) => {
         // Write file
         const today = new Date();
         const formattedDate = formatDateForFilename(today);
-        const excelFilename = `血壓記錄_${formattedDate}.xlsx`;
+        const excelFilename = `血壓記錄${process.env.TITLE_SUFFIX ? '(' + process.env.TITLE_SUFFIX + ')' : ''}_${formattedDate}.xlsx`;
         const excelPath = path.join(__dirname, excelFilename);
 
         try {
