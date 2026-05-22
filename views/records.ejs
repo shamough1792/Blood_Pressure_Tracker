@@ -38,9 +38,9 @@
         <!-- 月份導航 -->
         <div class="month-nav">
             <% if (prevMonth) { %>
-                <a href="/records?yearMonth=<%= prevMonth %>" class="arrow-btn">〈</a>
+                <a href="/records?yearMonth=<%= prevMonth %>" class="arrow-btn">‹</a>
             <% } else { %>
-                <span class="arrow-btn" style="visibility:hidden;">〈</span>
+                <span class="arrow-btn" style="visibility:hidden;">‹</span>
             <% } %>
             <select class="month-select" onchange="location=this.value">
                 <% months.forEach(function(m) { %>
@@ -48,9 +48,9 @@
                 <% }); %>
             </select>
             <% if (nextMonth) { %>
-                <a href="/records?yearMonth=<%= nextMonth %>" class="arrow-btn">〉</a>
+                <a href="/records?yearMonth=<%= nextMonth %>" class="arrow-btn">›</a>
             <% } else { %>
-                <span class="arrow-btn" style="visibility:hidden;">〉</span>
+                <span class="arrow-btn" style="visibility:hidden;">›</span>
             <% } %>
         </div>
         <% } %>
