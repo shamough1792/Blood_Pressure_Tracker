@@ -45,19 +45,21 @@ body {
 }
 
 .top-nav .nav-btn {
-    background: none;
+    background: #e8f5e9;
     border: none;
     font-size: 16px;
     color: #2d6a4f;
     cursor: pointer;
-    padding: 10px 14px;
+    padding: 10px 16px;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: 10px;
     transition: background 0.2s;
+    text-decoration: none;
+    display: inline-block;
 }
 
 .top-nav .nav-btn:hover {
-    background: #e8f5e9;
+    background: #c8e6c9;
 }
 
 /* --- 進度條 --- */
