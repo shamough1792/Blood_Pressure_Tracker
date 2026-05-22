@@ -38,9 +38,13 @@
         <!-- 月份導航 -->
         <div class="month-nav">
             <% if (prevMonth) { %>
-                <a href="/records?yearMonth=<%= prevMonth %>" class="arrow-btn">‹</a>
+                <a href="/records?yearMonth=<%= prevMonth %>" class="arrow-btn">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </a>
             <% } else { %>
-                <span class="arrow-btn" style="visibility:hidden;">‹</span>
+                <span class="arrow-btn" style="visibility:hidden;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </span>
             <% } %>
             <select class="month-select" onchange="location=this.value">
                 <% months.forEach(function(m) { %>
@@ -48,9 +52,13 @@
                 <% }); %>
             </select>
             <% if (nextMonth) { %>
-                <a href="/records?yearMonth=<%= nextMonth %>" class="arrow-btn">›</a>
+                <a href="/records?yearMonth=<%= nextMonth %>" class="arrow-btn">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
             <% } else { %>
-                <span class="arrow-btn" style="visibility:hidden;">›</span>
+                <span class="arrow-btn" style="visibility:hidden;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </span>
             <% } %>
         </div>
         <% } %>

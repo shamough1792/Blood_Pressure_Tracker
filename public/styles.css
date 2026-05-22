@@ -354,13 +354,17 @@ body {
     border-radius: 50%;
     width: 52px;
     height: 52px;
-    font-size: 26px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
     color: #333;
+    text-decoration: none;
+}
+
+.month-nav .arrow-btn svg {
+    display: block;
 }
 
 .month-nav .arrow-btn:hover {
