@@ -223,7 +223,7 @@ app.get('/export/excel', (req, res) => {
             // Row 1: Title (merged A-J)
             sheet.mergeCells('A1:J2');
             const titleRow = sheet.getRow(1);
-            titleRow.getCell(1).value = '血壓記錄表';
+            titleRow.getCell(1).value = '血壓記錄表' + (process.env.TITLE_SUFFIX ? ' (' + process.env.TITLE_SUFFIX + ')' : '');
             titleRow.getCell(1).font = { bold: true, size: 16 };
             titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
             titleRow.height = 36;
