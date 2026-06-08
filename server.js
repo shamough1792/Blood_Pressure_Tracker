@@ -255,8 +255,8 @@ app.get('/export/excel', (req, res) => {
 
             // Data rows: 10 cols [dayL, time, 上, 下, 心, dayR, time, 上, 下, 心]
             let startRow = 5;
-            for (let ld = 1; ld <= 15; ld++) {
-                const rd = ld + 16;
+            for (let ld = 1; ld <= 16; ld++) {
+                const rd = ld + 15;
 
                 // --- 早 row ---
                 const rowE = sheet.getRow(startRow);
