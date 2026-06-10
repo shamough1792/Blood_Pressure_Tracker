@@ -1,16 +1,23 @@
-# Blood Pressure Tracker 記錄血壓
+# Blood Pressure Tracker 血壓記錄
 
 <br>
 
-Blood Pressure Tracker Website.
+A web application for recording and tracking blood pressure data, built with Node.js, Express, and MariaDB.
 
 <br>
 
-## Description
+## Features
 
 <br>
 
-The Blood Pressure Tracker is a web application built using Node.js and MariaDB. This application allows users to easily record, track, and view their blood pressure data over time. Users can input their blood pressure measurements, including high pressure, low pressure, and heart rate. The readings are automatically timestamped and stored in the database. Users can then view their past blood pressure readings in a chronological order, with each entry displayed in a user-friendly format.
+- **長者友善 4 步驟引導輸入** — 逐步輸入高壓、低壓、心跳，支援自動填入日期時段
+- **卡片式記錄列表** — 依月份分組，支援左右箭頭切換月份或下拉選單直選
+- **血壓分級顏色提示** — 🟢 正常 / 🟡 偏高 / 🔴 高血壓
+- **Excel 匯出** — 日曆格式報表，含血壓分級顏色標示（綠色/黃色/紅色）
+- **可自訂標題** — 透過 `TITLE_SUFFIX` 環境變數，支援多人家族使用（如「血壓記錄 (嫲嫲)」）
+- **PWA 支援** — 可安裝到手機主畫面，像原生 App 般使用
+- **Docker 一鍵部署** — 支援自建 MariaDB 或連外部資料庫
+- **響應式設計** — 手機、平板、電腦都適用
 
 <br>
 
@@ -18,63 +25,30 @@ The Blood Pressure Tracker is a web application built using Node.js and MariaDB.
 
 <br>
 
-### Dependencies
+### Option 1: Docker (Recommended)
 
-* Linux
-* Node.js version >= 20.16.0
-* MySql >= 15.1 Distrib 10.6.10-MariaDB
-
-<br>
-
-### Installing
-
-* Download the file from latest release or download the source file.
-* Create new folder to contain all the file from release.
-
-<br>
-
-### Executing program
-
-* Open the terminal in the directory of js file and package.json.
-
+```bash
+# 使用外部資料庫（如 Synology NAS）
+TITLE_SUFFIX=嫲嫲 docker compose up -d --build
 ```
+
+### Option 2: Manual Setup
+
+#### Dependencies
+
+- Node.js >= 20
+- MariaDB >= 10.6
+
+#### Installing
+
+```bash
 npm install
 ```
 
-```
-node server.js
-```
+#### Setup Database
 
-<br>
-
-## Setup
-
-<br>
-
-* Setup database
-
-<br>
-
-```
-sudo apt install mariadb-server
-```
-```
-sudo mysql -u root -p
-```
-
-```
-CREATE USER 'tracker_user'@'localhost' IDENTIFIED BY 'Your_Password';
-```
-
-```
-CREATE DATABASE blood_pressure_tracker;
-```
-
-```
-USE blood_pressure_tracker;
-```
-
-```
+```sql
+CREATE DATABASE blood_test;
 CREATE TABLE records (
     id INT AUTO_INCREMENT PRIMARY KEY,
     high_pressure INT NOT NULL,
@@ -84,55 +58,91 @@ CREATE TABLE records (
 );
 ```
 
+#### Configure
+
+Edit `server.js` or set environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `DB_HOST` | Database host (default: `192.168.1.222`) |
+| `DB_USER` | Database user (default: `tracker_user`) |
+| `DB_PASSWORD` | Database password |
+| `DB_NAME` | Database name (default: `blood_test`) |
+| `PORT` | Server port (default: `3000`) |
+| `TITLE_SUFFIX` | Optional title suffix (e.g., `嫲嫲`) |
+
+#### Running
+
+```bash
+TITLE_SUFFIX=嫲嫲 node server.js
 ```
-GRANT ALL PRIVILEGES ON blood_pressure_tracker.* TO 'tracker_user'@'localhost';
+
+<br>
+
+## Docker Deployment
+
+<br>
+
+### 使用外部資料庫（如 Synology NAS）
+
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: Asia/Hong_Kong
+      DB_HOST: 192.168.1.222
+      DB_USER: tracker_user
+      DB_PASSWORD: 'your_password'
+      DB_NAME: blood_test
+      TITLE_SUFFIX: ${TITLE_SUFFIX:-}
+    restart: unless-stopped
 ```
 
-* Replace the Your_Password with your password.
+### 多人家族使用
 
+```bash
+# 給嫲嫲用
+TITLE_SUFFIX=嫲嫲 docker compose up -d
 
-<br><br>
-
-* Setup server.js
-
-<br>
-
+# 給爸爸用（不同 port）
+TITLE_SUFFIX=爸爸 docker compose -p dad up -d
+# 修改 ports 為 "3001:3000"
 ```
-// Database connection
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'tracker_user', // replace with your MariaDB username
-    password: 'Your_Password', // replace with your MariaDB password
-    database: 'blood_pressure_tracker'
-});
- ```
-
-* Replace the Your_Password with your password.
 
 <br>
 
-```
-const port = 3000;
-```
-* Default Port of the website is 3000.
-
-<br><br>
-
-## Screenshot Of The Website
+## Version History
 
 <br>
 
-![Alt Text](images/index.png)
+* 0.1 — Initial Release
+* 0.2 — UI update, success popup
+* 0.3 — Bug fixes, auto reconnect
+* 0.3.5 — CSV output improvements
+* 0.4 — CSV naming, favicon
+* 0.5 — XLSX export, layout improvements
+* 0.5.1 — Export empty records fix
+* 0.6 — Records grouped by month, modify page
+* **1.0** — Elderly-friendly redesign, 4-step input, card view, PWA, Docker, Excel color coding
 
 <br>
 
-![Alt Text](images/record.png)
+## Screenshots
 
 <br>
 
+![Index Page](images/index.png)
+
 <br>
 
-![Alt Text](images/modify.png)
+![Records Page](images/record.png)
+
+<br>
+
+![Modify Page](images/modify.png)
 
 <br>
 
@@ -144,65 +154,10 @@ const port = 3000;
 
 <br>
 
-## Version History
-
-<br>
-
-* 0.1
-    * Initial Release.
-
-* 0.2
-    * Update UI.
-    * Adding pop up when successful add new record.
- 
-* 0.3
-    * Fixed package.json.
-    * Fixed record data problem.
-    * Added auto reconnect to database to avoid time out.
-
-* 0.3.5
-    * Update the CSV output order by date.
-    * Update the CSV date and time format.
-
-* 0.4
-    * Update the output CSV name format.
-    * Added favicon.
-
-* 0.5
-    * Changed output .xlsx instead of .csv.
-    * Moved buttons in records page to top.
-    * Now show records order by DESC.
-
-* 0.5.1
-    * Fixed pressing export excel button program terminate when no record is input.
-
-* 0.6
-    * improved The layout of record page with sorted record by month, default display latest month
-    * Added Modify record button and page.
-
-<br>
-
-## Future Planning
-
-<br>
-
-* Multi-language support.
-* Multi-user support.
-
-<br>
-
 ## License
 
 <br>
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-<br>
-
-## Acknowledgments
-
-<br>
-
-* [Poe](https://poe.com/)
+This project is licensed under the MIT License — see the [LICENSE.md](LICENSE.md) file for details
 
 <br>
