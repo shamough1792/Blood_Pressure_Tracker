@@ -71,9 +71,9 @@ app.get('/records', (req, res) => {
             }
             acc[yearMonth].push({
                 ...record,
-                formattedDate: date.toLocaleString('zh-HK', {
-                    year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true
-                }).replace(',', '')
+                formattedDate: date.toLocaleDateString('zh-HK', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                }) + ' ' + (date.getHours() < 12 ? '上午' : '下午')
             });
             return acc;
         }, {});
