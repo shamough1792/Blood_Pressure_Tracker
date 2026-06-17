@@ -496,7 +496,8 @@ body {
 .form-group input,
 .form-group select {
     width: 100%;
-    min-width: 0;
+    max-width: 100%;
+    display: block;
     padding: 16px 18px;
     font-size: 22px;
     border: 2px solid #d0d7de;
