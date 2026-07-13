@@ -227,18 +227,12 @@
             const statusEl = document.getElementById('bpStatus');
 
             let statusClass, statusText;
-            if (hp < 120 && lp < 80) {
-                statusClass = 'bp-normal';
-                statusText = '正常';
-            } else if (hp < 130 && lp < 80) {
-                statusClass = 'bp-elevated';
-                statusText = '偏高';
-            } else if (hp < 140 || lp < 90) {
-                statusClass = 'bp-elevated';
-                statusText = '偏高';
-            } else {
+            if (hp >= 140 || lp >= 90) {
                 statusClass = 'bp-high';
                 statusText = '高血壓';
+            } else {
+                statusClass = 'bp-normal';
+                statusText = '正常';
             }
 
             statusEl.className = 'bp-status ' + statusClass;

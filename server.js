@@ -183,8 +183,7 @@ app.get('/export/excel', (req, res) => {
         // Helper to get BP color
         function getBpColor(hp, lp) {
             if (hp >= 140 || lp >= 90) return 'FFCDD2'; // red
-            if (hp < 120 && lp < 80) return 'C8E6C9';  // green
-            return 'FFF9C4'; // yellow
+            return 'C8E6C9';  // green
         }
 
         // Group records by year-month, then by day and period
