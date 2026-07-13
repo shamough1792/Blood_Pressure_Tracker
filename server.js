@@ -251,7 +251,7 @@ app.get('/export/excel', (req, res) => {
                 cell.value = hdrs[i];
                 cell.font = { bold: true, size: 10 };
                 cell.alignment = { horizontal: 'center', vertical: 'middle' };
-                cell.border = thinBorder;
+                if (i !== 5) cell.border = thinBorder;
             }
             headerRow.height = 22;
 
@@ -284,7 +284,7 @@ app.get('/export/excel', (req, res) => {
                     cell.value = vE[i];
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.font = { size: 10 };
-                    cell.border = thinBorder;
+                    if (i !== 5) cell.border = thinBorder;
                 }
 
                 if (data[ld] && data[ld]['早']) {
@@ -323,7 +323,7 @@ app.get('/export/excel', (req, res) => {
                     cell.value = vL[i];
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.font = { size: 10 };
-                    cell.border = thinBorder;
+                    if (i !== 5) cell.border = thinBorder;
                 }
 
                 if (data[ld] && data[ld]['晚']) {
