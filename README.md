@@ -1,51 +1,51 @@
-# Blood Pressure Tracker 血壓記錄
+# 血壓記錄系統
 
 <br>
 
-A web application for recording and tracking blood pressure data, built with Node.js, Express, and MariaDB.
+一個用 Node.js、Express、MariaDB 打造的血壓記錄網站，專為長輩設計，簡單易用。
 
 <br>
 
-## Features
+## 功能特色
 
 <br>
 
-- **長者友善 4 步驟引導輸入** — 逐步輸入高壓、低壓、心跳，支援自動填入日期時段
-- **卡片式記錄列表** — 依月份分組，支援左右箭頭切換月份或下拉選單直選
-- **血壓分級顏色提示** — 🟢 正常 / 🟡 偏高 / 🔴 高血壓
-- **Excel 匯出** — 日曆格式報表，含血壓分級顏色標示（綠色/黃色/紅色）
+- **長者友善 4 步驟引導輸入** — 逐步輸入高壓、低壓、心跳，日期時段自動填入
+- **卡片式記錄列表** — 依月份分組，左右箭頭切換月份或下拉選單直選
+- **血壓分級顏色提示** — 🟢 正常 / 🔴 高血壓
+- **Excel 匯出** — 日曆格式報表，含血壓分級顏色標示
 - **可自訂標題** — 透過 `TITLE_SUFFIX` 環境變數，支援多人家族使用（如「血壓記錄 (嫲嫲)」）
 - **PWA 支援** — 可安裝到手機主畫面，像原生 App 般使用
-- **Docker 一鍵部署** — 支援自建 MariaDB 或連外部資料庫
+- **Docker 一鍵部署** — 可自建資料庫或連 Synology NAS
 - **響應式設計** — 手機、平板、電腦都適用
 
 <br>
 
-## Getting Started
+## 快速開始
 
 <br>
 
-### Option 1: Docker (Recommended)
+### 方式一：Docker（推薦）
 
 ```bash
 # 使用外部資料庫（如 Synology NAS）
 TITLE_SUFFIX=嫲嫲 docker compose up -d --build
 ```
 
-### Option 2: Manual Setup
+### 方式二：手動安裝
 
-#### Dependencies
+#### 環境需求
 
 - Node.js >= 20
 - MariaDB >= 10.6
 
-#### Installing
+#### 安裝步驟
 
 ```bash
 npm install
 ```
 
-#### Setup Database
+#### 建立資料庫
 
 ```sql
 CREATE DATABASE blood_test;
@@ -58,20 +58,18 @@ CREATE TABLE records (
 );
 ```
 
-#### Configure
+#### 環境變數
 
-Edit `server.js` or set environment variables:
+| 變數 | 說明 | 預設值 |
+|------|------|--------|
+| `DB_HOST` | 資料庫主機 | `192.168.1.222` |
+| `DB_USER` | 資料庫帳號 | `tracker_user` |
+| `DB_PASSWORD` | 資料庫密碼 | |
+| `DB_NAME` | 資料庫名稱 | `blood_test` |
+| `PORT` | 網站埠號 | `3000` |
+| `TITLE_SUFFIX` | 標題後綴（如 `嫲嫲`） | |
 
-| Variable | Description |
-|----------|-------------|
-| `DB_HOST` | Database host (default: `192.168.1.222`) |
-| `DB_USER` | Database user (default: `tracker_user`) |
-| `DB_PASSWORD` | Database password |
-| `DB_NAME` | Database name (default: `blood_test`) |
-| `PORT` | Server port (default: `3000`) |
-| `TITLE_SUFFIX` | Optional title suffix (e.g., `嫲嫲`) |
-
-#### Running
+#### 啟動
 
 ```bash
 TITLE_SUFFIX=嫲嫲 node server.js
@@ -79,7 +77,7 @@ TITLE_SUFFIX=嫲嫲 node server.js
 
 <br>
 
-## Docker Deployment
+## Docker 部署
 
 <br>
 
@@ -107,46 +105,46 @@ services:
 # 給嫲嫲用
 TITLE_SUFFIX=嫲嫲 docker compose up -d
 
-# 給爸爸用（不同 port）
+# 給爸爸用（不同埠號）
 TITLE_SUFFIX=爸爸 docker compose -p dad up -d
 # 修改 ports 為 "3001:3000"
 ```
 
 <br>
 
-## Version History
+## 版本紀錄
 
 <br>
 
-* 0.1 — Initial Release
-* 0.2 — UI update, success popup
-* 0.3 — Bug fixes, auto reconnect
-* 0.3.5 — CSV output improvements
-* 0.4 — CSV naming, favicon
-* 0.5 — XLSX export, layout improvements
-* 0.5.1 — Export empty records fix
-* 0.6 — Records grouped by month, modify page
-* **1.0** — Elderly-friendly redesign, 4-step input, card view, PWA, Docker, Excel color coding
+* 0.1 — 初始版本
+* 0.2 — UI 更新，新增成功提示
+* 0.3 — 錯誤修正，自動重新連線
+* 0.3.5 — CSV 輸出優化
+* 0.4 — CSV 檔名格式、網站圖示
+* 0.5 — 改用 Excel 匯出、版面調整
+* 0.5.1 — 無資料時匯出錯誤修正
+* 0.6 — 記錄按月分組、新增修改功能
+* **1.0** — 長者友善改版、4 步驟輸入、卡片檢視、PWA、Docker、Excel 顏色標示
 
 <br>
 
-## Screenshots
+## 畫面截圖
 
 <br>
 
-![Index Page](images/index.png)
+![首頁](images/index.png)
 
 <br>
 
-![Records Page](images/record.png)
+![記錄頁](images/record.png)
 
 <br>
 
-![Modify Page](images/modify.png)
+![修改頁](images/modify.png)
 
 <br>
 
-## Authors
+## 作者
 
 <br>
 
@@ -154,10 +152,10 @@ TITLE_SUFFIX=爸爸 docker compose -p dad up -d
 
 <br>
 
-## License
+## 授權
 
 <br>
 
-This project is licensed under the MIT License — see the [LICENSE.md](LICENSE.md) file for details
+本專案採用 MIT 授權 — 詳見 [LICENSE.md](LICENSE.md)
 
 <br>
