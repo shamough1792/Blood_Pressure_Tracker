@@ -341,7 +341,10 @@ app.get('/export/excel', (req, res) => {
                     sheet.mergeCells(`F${startRow}:F${startRow + 1}`);
                 }
 
-                startRow += 2;
+                // Separator row between days
+                const sepRow = sheet.getRow(startRow + 2);
+                sepRow.height = 6;
+                startRow += 3;
             }
         });
 
