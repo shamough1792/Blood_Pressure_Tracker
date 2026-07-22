@@ -287,7 +287,9 @@ function formatDateForFilename(date) {
 // Export to Excel
 app.get('/export/excel', (req, res) => {
     const userId = req.query.userId || 1;
-    db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], async (err, results) => {
+    db.query('SELECT name FROM users WHERE id = ?', [userId], (err2, users) => {
+        const userName = users && users.length ? users[0].name : '';
+        db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], async (err, results) => {
         if (err) throw err;
 
         if (results.length === 0) {
@@ -344,7 +346,7 @@ app.get('/export/excel', (req, res) => {
             // Row 1: Title (merged A-K)
             sheet.mergeCells('A1:K2');
             const titleRow = sheet.getRow(1);
-            titleRow.getCell(1).value = '血壓記錄表' + (process.env.TITLE_SUFFIX ? ' (' + process.env.TITLE_SUFFIX + ')' : '');
+            titleRow.getCell(1).value = '血壓記錄表' + (userName ? ' (' + userName + ')' : '');
             titleRow.getCell(1).font = { bold: true, size: 16 };
             titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
             titleRow.height = 36;
@@ -473,7 +475,8 @@ app.get('/export/excel', (req, res) => {
         // Write file
         const today = new Date();
         const formattedDate = formatDateForFilename(today);
-        const excelFilename = `血壓記錄${process.env.TITLE_SUFFIX ? '(' + process.env.TITLE_SUFFIX + ')' : ''}_${formattedDate}.xlsx`;
+        const excelSuffix = userName || process.env.TITLE_SUFFIX || '';
+        const excelFilename = `血壓記錄${excelSuffix ? '(' + excelSuffix + ')' : ''}_${formattedDate}.xlsx`;
         const excelPath = path.join(__dirname, excelFilename);
 
         try {
@@ -486,6 +489,7 @@ app.get('/export/excel', (req, res) => {
             console.error('Error writing Excel file:', writeErr);
             res.status(500).send('匯出 Excel 失敗');
         }
+    });
     });
 });
 
