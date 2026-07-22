@@ -10,13 +10,14 @@
 
 <br>
 
+- **多使用者 Portal** — 家庭成員各自獨立記錄，點選大頭貼即可切換
 - **長者友善 4 步驟引導輸入** — 逐步輸入高壓、低壓、心跳，日期時段自動填入
-- **卡片式記錄列表** — 依月份分組，左右箭頭切換月份或下拉選單直選
+- **卡片式記錄列表** — 依月份分組，下拉選單或左右箭頭切換月份
 - **血壓分級顏色提示** — 🟢 正常 / 🔴 高血壓
 - **Excel 匯出** — 日曆格式報表，含血壓分級顏色標示
-- **可自訂標題** — 透過 `TITLE_SUFFIX` 環境變數，支援多人家族使用（如「血壓記錄 (嫲嫲)」）
+- **管理後台** — 新增/編輯/刪除使用者，支援 SQL 匯入舊資料
 - **PWA 支援** — 可安裝到手機主畫面，像原生 App 般使用
-- **Docker 一鍵部署** — 可自建資料庫或連 Synology NAS
+- **Docker 一鍵部署** — 可連 Synology NAS 或其他外部資料庫
 - **響應式設計** — 手機、平板、電腦都適用
 
 <br>
@@ -27,9 +28,23 @@
 
 ### 方式一：Docker（推薦）
 
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: Asia/Hong_Kong
+      DB_HOST: 192.168.1.222
+      DB_USER: tracker_user
+      DB_PASSWORD: 'your_password'
+      DB_NAME: blood_test
+    restart: unless-stopped
+```
+
 ```bash
-# 使用外部資料庫（如 Synology NAS）
-TITLE_SUFFIX=嫲嫲 docker compose up -d --build
+docker compose up -d --build
 ```
 
 ### 方式二：手動安裝
@@ -49,12 +64,21 @@ npm install
 
 ```sql
 CREATE DATABASE blood_test;
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    color VARCHAR(7) NOT NULL DEFAULT '#4CAF50',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO users (name, color) VALUES ('使用者', '#4CAF50');
 CREATE TABLE records (
     id INT AUTO_INCREMENT PRIMARY KEY,
     high_pressure INT NOT NULL,
     low_pressure INT NOT NULL,
     heartbeat INT NOT NULL,
-    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 ```
 
@@ -67,13 +91,14 @@ CREATE TABLE records (
 | `DB_PASSWORD` | 資料庫密碼 | |
 | `DB_NAME` | 資料庫名稱 | `blood_test` |
 | `PORT` | 網站埠號 | `3000` |
-| `TITLE_SUFFIX` | 標題後綴（如 `嫲嫲`） | |
 
 #### 啟動
 
 ```bash
-TITLE_SUFFIX=嫲嫲 node server.js
+npm start
 ```
+
+開啟 http://localhost:3000 即可看到使用者選擇頁。
 
 <br>
 
@@ -95,20 +120,28 @@ services:
       DB_USER: tracker_user
       DB_PASSWORD: 'your_password'
       DB_NAME: blood_test
-      TITLE_SUFFIX: ${TITLE_SUFFIX:-}
     restart: unless-stopped
 ```
 
-### 多人家族使用
+<br>
 
-```bash
-# 給嫲嫲用
-TITLE_SUFFIX=嫲嫲 docker compose up -d
+## 畫面截圖
 
-# 給爸爸用（不同埠號）
-TITLE_SUFFIX=爸爸 docker compose -p dad up -d
-# 修改 ports 為 "3001:3000"
-```
+<br>
+
+![使用者選擇頁](images/portal.png)
+
+<br>
+
+![首頁](images/index.png)
+
+<br>
+
+![記錄頁](images/record.png)
+
+<br>
+
+![管理後台](images/admin.png)
 
 <br>
 
@@ -125,22 +158,7 @@ TITLE_SUFFIX=爸爸 docker compose -p dad up -d
 * 0.5.1 — 無資料時匯出錯誤修正
 * 0.6 — 記錄按月分組、新增修改功能
 * **1.0** — 長者友善改版、4 步驟輸入、卡片檢視、PWA、Docker、Excel 顏色標示
-
-<br>
-
-## 畫面截圖
-
-<br>
-
-![首頁](images/index.png)
-
-<br>
-
-![記錄頁](images/record.png)
-
-<br>
-
-![修改頁](images/modify.png)
+* **2.0** — 多使用者 Portal、管理後台、SQL 匯入、使用者名稱顯示
 
 <br>
 
