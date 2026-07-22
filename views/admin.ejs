@@ -121,14 +121,20 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, color })
-        }).then(r => r.json()).then(() => location.reload());
+        }).then(r => r.json()).then(data => {
+            if (data.error) { alert('新增失敗：' + data.error); return; }
+            location.reload();
+        }).catch(e => alert('新增失敗，請檢查網路連線'));
         return false;
     }
 
     function deleteUser(id, name) {
         if (!confirm('確定刪除 ' + name + '？所有相關血壓記錄也會一併刪除。')) return;
         fetch('/api/users/' + id, { method: 'DELETE' })
-            .then(r => r.json()).then(() => location.reload());
+            .then(r => r.json()).then(data => {
+                if (data.error) { alert('刪除失敗：' + data.error); return; }
+                location.reload();
+            }).catch(e => alert('刪除失敗'));
     }
 
     function editUser(id, name, color) {
@@ -150,7 +156,10 @@
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, color })
-        }).then(r => r.json()).then(() => location.reload());
+        }).then(r => r.json()).then(data => {
+            if (data.error) { alert('編輯失敗：' + data.error); return; }
+            location.reload();
+        }).catch(e => alert('編輯失敗'));
     }
 
     function importSql(e) {
