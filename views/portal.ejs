@@ -14,7 +14,7 @@
         .portal-header{background:linear-gradient(135deg,#2d6a4f,#40916c);color:#fff;border-radius:24px;padding:28px;text-align:center;margin-bottom:32px;box-shadow:0 8px 24px rgba(45,106,79,0.25)}
         .portal-header h1{font-size:30px;font-weight:700;margin-bottom:6px;color:#fff}
         .portal-header p{font-size:17px;opacity:.85;margin:0}
-        .user-grid{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;padding:20px 0;flex:1;align-content:center;align-items:center}
+        .user-grid{flex:1;display:flex;align-items:center;justify-content:center}
         .user-card{display:flex;flex-direction:column;align-items:center;text-decoration:none;width:130px;padding:20px 16px 18px;border-radius:20px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.06);transition:all .25s ease;cursor:pointer}
         .user-card:hover{transform:translateY(-6px);box-shadow:0 12px 32px rgba(0,0,0,0.12);background:#fff}
         .user-avatar{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;color:#fff;margin-bottom:14px;box-shadow:0 6px 16px rgba(0,0,0,0.18);transition:transform .25s ease;font-weight:600}
@@ -33,6 +33,7 @@
         </div>
 
         <div class="user-grid">
+            <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:center;">
             <% users.forEach(function(u) { %>
                 <a href="/bp/<%= u.id %>?name=<%= encodeURIComponent(u.name) %>" class="user-card" onclick="localStorage.setItem('bp_user', '<%= u.id %>')">
                     <div class="user-avatar" style="background:<%= u.color %>">
@@ -41,6 +42,7 @@
                     <span class="user-name"><%= u.name %></span>
                 </a>
             <% }); %>
+            </div>
         </div>
     </div>
 
