@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>血壓記錄<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2d6a4f">
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        .user-grid{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;padding:40px 0;flex:1;align-content:center}
+        .user-card{display:flex;flex-direction:column;align-items:center;text-decoration:none;width:120px;padding:16px;border-radius:20px;transition:background 0.2s;cursor:pointer}
+        .user-card:hover{background:#e8f5e9}
+        .user-avatar{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+        .user-name{font-size:22px;font-weight:700;color:#1a1a2e}
+        .admin-link{position:fixed;bottom:20px;right:20px;width:52px;height:52px;border-radius:50%;background:#2d6a4f;color:#fff;border:none;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);text-decoration:none;z-index:10}
+        @media(max-width:480px){.user-card{width:100px;padding:12px}.user-avatar{width:64px;height:64px;font-size:28px}}
+    </style>
+</head>
+<body>
+    <div class="container" style="justify-content:center;">
+        <h1 style="text-align:center;font-size:32px;margin-bottom:8px;color:#1a1a2e;">血壓記錄</h1>
+        <p style="text-align:center;color:#666;font-size:18px;margin-bottom:16px;">選擇使用者</p>
+
+        <div class="user-grid">
+            <% users.forEach(function(u) { %>
+                <a href="/bp/<%= u.id %>" class="user-card" onclick="localStorage.setItem('bp_user', '<%= u.id %>')">
+                    <div class="user-avatar" style="background:<%= u.color %>">
+                        <%= u.name.charAt(0) %>
+                    </div>
+                    <span class="user-name"><%= u.name %></span>
+                </a>
+            <% }); %>
+        </div>
+    </div>
+
+    <a href="/admin" class="admin-link">⚙</a>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+</body>
+</html>
