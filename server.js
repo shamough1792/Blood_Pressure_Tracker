@@ -25,6 +25,7 @@ db.connect(err => {
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(fileUpload());
@@ -95,48 +96,51 @@ app.put('/api/users/:id', (req, res) => {
 });
 
 // API: 匯入 SQL
-app.post('/api/import-sql', (req, res) => {
+app.post('/api/import-sql', async (req, res) => {
     const { user_id } = req.body;
     if (!req.files || !req.files.sqlFile) {
         return res.status(400).send('請上傳 SQL 檔案');
     }
     const sqlContent = req.files.sqlFile.data.toString('utf8');
 
-    // 解析 INSERT INTO records 語句
+    // 解析所有 VALUES 並組裝成參數陣列
     const insertRegex = /INSERT\s+INTO\s+records\s*(?:\([^)]*\))?\s*VALUES\s*(.*?);/gis;
+    const rows = [];
     let match;
-    let imported = 0;
-    let errors = 0;
-
     while ((match = insertRegex.exec(sqlContent)) !== null) {
         const valuesBlock = match[1];
         const valueRegex = /\(([^)]+)\)/g;
         let vMatch;
         while ((vMatch = valueRegex.exec(valuesBlock)) !== null) {
             const parts = vMatch[1].split(',').map(s => s.trim().replace(/^'|'$/g, ''));
-            let high, low, heart, timestamp;
             if (parts.length >= 4) {
-                high = parts[parts.length - 4];
-                low = parts[parts.length - 3];
-                heart = parts[parts.length - 2];
-                timestamp = parts[parts.length - 1];
-            } else continue;
-
-            const ts = timestamp === 'current_timestamp()' || timestamp === 'CURRENT_TIMESTAMP'
-                ? new Date() : new Date(timestamp);
-
-            db.query(
-                'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)',
-                [parseInt(high) || 0, parseInt(low) || 0, parseInt(heart) || 0, ts, parseInt(user_id) || 1],
-                (err) => {
-                    if (err) errors++;
-                    else imported++;
-                }
-            );
+                const high = parseInt(parts[parts.length - 4]) || 0;
+                const low = parseInt(parts[parts.length - 3]) || 0;
+                const heart = parseInt(parts[parts.length - 2]) || 0;
+                const ts = ['current_timestamp()', 'CURRENT_TIMESTAMP'].includes(parts[parts.length - 1])
+                    ? new Date() : new Date(parts[parts.length - 1]);
+                rows.push([high, low, heart, ts, parseInt(user_id) || 1]);
+            }
         }
     }
 
-    res.send(`匯入完成：成功 ${imported} 筆，失敗 ${errors} 筆`);
+    if (rows.length === 0) return res.send('找不到可匯入的記錄');
+
+    // 批次匯入（使用 Promise.all 確保全部完成才回應）
+    const results = await Promise.allSettled(
+        rows.map(row =>
+            new Promise((resolve, reject) => {
+                db.query('INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)', row, (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            })
+        )
+    );
+
+    const success = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    res.send(`匯入完成：成功 ${success} 筆，失敗 ${failed} 筆`);
 });
 
 app.post('/add', (req, res) => {
