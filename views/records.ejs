@@ -95,9 +95,11 @@
                         </div>
                     </div>
                     <div class="card-actions">
-                        <a href="/modify/<%= record.id %>?userId=<%= userId %>" class="btn btn-secondary">修改</a>
+                        <a href="/modify/<%= record.id %>?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="btn btn-secondary">修改</a>
                         <form action="/delete/<%= record.id %>" method="POST" style="display:inline;"
                               onsubmit="return confirm('確定要刪除這條記錄嗎？');">
+                            <input type="hidden" name="userId" value="<%= userId %>">
+                            <input type="hidden" name="name" value="<%= typeof userName !== 'undefined' ? userName : '' %>">
                             <button type="submit" class="btn btn-danger">刪除</button>
                         </form>
                     </div>

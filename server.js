@@ -216,7 +216,7 @@ app.get('/modify/:id', (req, res) => {
         }
 
         const record = results[0];
-        res.render('modify', { record, titleSuffix: process.env.TITLE_SUFFIX || '', userId: req.query.userId || 1 });
+        res.render('modify', { record, titleSuffix: process.env.TITLE_SUFFIX || '', userId: req.query.userId || 1, userName: req.query.name || '' });
     });
 });
 
@@ -243,7 +243,7 @@ app.post('/update/:id', (req, res) => {
             console.error('Error updating record:', err);
             return res.status(500).send('Error updating record');
         }
-        res.redirect('/records?userId=' + (req.query.userId || 1));
+        res.redirect('/records?userId=' + (req.query.userId || 1) + '&name=' + encodeURIComponent(req.query.name || ''));
     });
 });
 
@@ -253,7 +253,7 @@ app.post('/delete/:id', (req, res) => {
     const query = 'DELETE FROM records WHERE id = ?';
     db.query(query, [recordId], (err) => {
         if (err) throw err;
-        res.redirect('/records?userId=' + (req.body.userId || 1));
+        res.redirect('/records?userId=' + (req.body.userId || 1) + '&name=' + encodeURIComponent(req.body.name || ''));
     });
 });
 
