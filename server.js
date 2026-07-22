@@ -104,7 +104,7 @@ app.post('/api/import-sql', async (req, res) => {
     const sqlContent = req.files.sqlFile.data.toString('utf8');
 
     // 解析所有 VALUES 並組裝成參數陣列
-    const insertRegex = /INSERT\s+INTO\s+records\s*(?:\([^)]*\))?\s*VALUES\s*(.*?);/gis;
+    const insertRegex = /INSERT\s+INTO\s+`?records`?\s*(?:\([^)]*\))?\s*VALUES\s*(.*?);/gis;
     const rows = [];
     let match;
     while ((match = insertRegex.exec(sqlContent)) !== null) {
