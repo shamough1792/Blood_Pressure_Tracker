@@ -35,12 +35,6 @@ CREATE TABLE `users` (
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
 
---
--- 使用資料表自動遞增(AUTO_INCREMENT) `users`
---
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
 -- --------------------------------------------------------
 
 --
@@ -63,11 +57,6 @@ ALTER TABLE `records`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`);
 
---
--- 使用資料表自動遞增(AUTO_INCREMENT) `records`
---
-ALTER TABLE `records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- 外鍵
