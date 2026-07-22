@@ -5,6 +5,7 @@ const ejs = require('ejs');
 const path = require('path');
 const fs = require('fs');
 const ExcelJS = require('exceljs');
+const fileUpload = require('express-fileupload');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,14 +27,120 @@ db.connect(err => {
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use(fileUpload());
 
-// GET route for the index page
+// 使用者選擇頁
 app.get('/', (req, res) => {
-    res.render('index', { successMessage: null, titleSuffix: process.env.TITLE_SUFFIX || '' });
+    db.query('SELECT * FROM users ORDER BY id ASC', (err, users) => {
+        if (err) throw err;
+        res.render('portal', { users, titleSuffix: process.env.TITLE_SUFFIX || '' });
+    });
+});
+
+// 血壓記錄頁
+app.get('/bp/:userId', (req, res) => {
+    res.render('index', {
+        successMessage: null,
+        titleSuffix: process.env.TITLE_SUFFIX || '',
+        userId: req.params.userId
+    });
+});
+
+// 管理後台
+app.get('/admin', (req, res) => {
+    db.query('SELECT * FROM users ORDER BY id ASC', (err, users) => {
+        if (err) throw err;
+        res.render('admin', { users, titleSuffix: process.env.TITLE_SUFFIX || '' });
+    });
+});
+
+// API: 取得使用者列表
+app.get('/api/users', (req, res) => {
+    db.query('SELECT * FROM users ORDER BY id ASC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+// API: 新增使用者
+app.post('/api/users', (req, res) => {
+    const { name, color } = req.body;
+    if (!name) return res.status(400).json({ error: '請輸入名稱' });
+    db.query('INSERT INTO users (name, color) VALUES (?, ?)', [name, color || '#4CAF50'], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, name, color: color || '#4CAF50' });
+    });
+});
+
+// API: 刪除使用者（連同記錄）
+app.delete('/api/users/:id', (req, res) => {
+    const userId = req.params.id;
+    db.query('DELETE FROM records WHERE user_id = ?', [userId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.query('DELETE FROM users WHERE id = ?', [userId], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+    });
+});
+
+// API: 編輯使用者
+app.put('/api/users/:id', (req, res) => {
+    const userId = req.params.id;
+    const { name, color } = req.body;
+    db.query('UPDATE users SET name = ?, color = ? WHERE id = ?', [name, color, userId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// API: 匯入 SQL
+app.post('/api/import-sql', (req, res) => {
+    const { user_id } = req.body;
+    if (!req.files || !req.files.sqlFile) {
+        return res.status(400).send('請上傳 SQL 檔案');
+    }
+    const sqlContent = req.files.sqlFile.data.toString('utf8');
+
+    // 解析 INSERT INTO records 語句
+    const insertRegex = /INSERT\s+INTO\s+records\s*(?:\([^)]*\))?\s*VALUES\s*(.*?);/gis;
+    let match;
+    let imported = 0;
+    let errors = 0;
+
+    while ((match = insertRegex.exec(sqlContent)) !== null) {
+        const valuesBlock = match[1];
+        const valueRegex = /\(([^)]+)\)/g;
+        let vMatch;
+        while ((vMatch = valueRegex.exec(valuesBlock)) !== null) {
+            const parts = vMatch[1].split(',').map(s => s.trim().replace(/^'|'$/g, ''));
+            let high, low, heart, timestamp;
+            if (parts.length >= 4) {
+                high = parts[parts.length - 4];
+                low = parts[parts.length - 3];
+                heart = parts[parts.length - 2];
+                timestamp = parts[parts.length - 1];
+            } else continue;
+
+            const ts = timestamp === 'current_timestamp()' || timestamp === 'CURRENT_TIMESTAMP'
+                ? new Date() : new Date(timestamp);
+
+            db.query(
+                'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)',
+                [parseInt(high) || 0, parseInt(low) || 0, parseInt(heart) || 0, ts, parseInt(user_id) || 1],
+                (err) => {
+                    if (err) errors++;
+                    else imported++;
+                }
+            );
+        }
+    }
+
+    res.send(`匯入完成：成功 ${imported} 筆，失敗 ${errors} 筆`);
 });
 
 app.post('/add', (req, res) => {
-    const { high_pressure, low_pressure, heartbeat, record_date, time_of_day } = req.body;
+    const { high_pressure, low_pressure, heartbeat, record_date, time_of_day, user_id } = req.body;
 
     // Auto-detect date and time if not provided (elderly-friendly mode)
     const now = new Date();
@@ -47,18 +154,19 @@ app.post('/add', (req, res) => {
         ? new Date(`${date}T20:00:00`)
         : new Date(`${date}T08:00:00`);
 
-    const query = 'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at) VALUES (?, ?, ?, ?)';
-    db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt], (err) => {
+    const query = 'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)';
+    db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt, user_id || 1], (err) => {
         if (err) {
             console.error('Error inserting record:', err);
             return res.status(500).send('Error adding record');
         }
-        res.render('index', { successMessage: '血壓記錄已成功添加！', titleSuffix: process.env.TITLE_SUFFIX || '' });
+        res.render('index', { successMessage: '血壓記錄已成功添加！', titleSuffix: process.env.TITLE_SUFFIX || '', userId: user_id || 1 });
     });
 });
 
 app.get('/records', (req, res) => {
-    db.query('SELECT * FROM records ORDER BY recorded_at DESC', (err, results) => {
+    const userId = req.query.userId || 1;
+    db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at DESC', [userId], (err, results) => {
         if (err) throw err;
 
         // Group records by year and month
@@ -82,7 +190,7 @@ app.get('/records', (req, res) => {
         const selectedMonth = req.query.yearMonth || (Object.keys(groupedRecords).length ? Object.keys(groupedRecords)[0] : null);
 
         // Pass groupedRecords and selectedMonth to the view
-        res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '' });
+        res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '', userId });
     });
 });
 
@@ -99,7 +207,7 @@ app.get('/modify/:id', (req, res) => {
         }
 
         const record = results[0];
-        res.render('modify', { record, titleSuffix: process.env.TITLE_SUFFIX || '' });
+        res.render('modify', { record, titleSuffix: process.env.TITLE_SUFFIX || '', userId: req.query.userId || 1 });
     });
 });
 
@@ -126,7 +234,7 @@ app.post('/update/:id', (req, res) => {
             console.error('Error updating record:', err);
             return res.status(500).send('Error updating record');
         }
-        res.redirect('/records');
+        res.redirect('/records?userId=' + (req.query.userId || 1));
     });
 });
 
@@ -136,7 +244,7 @@ app.post('/delete/:id', (req, res) => {
     const query = 'DELETE FROM records WHERE id = ?';
     db.query(query, [recordId], (err) => {
         if (err) throw err;
-        res.redirect('/records');
+        res.redirect('/records?userId=' + (req.body.userId || 1));
     });
 });
 
@@ -168,7 +276,8 @@ function formatDateForFilename(date) {
 
 // Export to Excel
 app.get('/export/excel', (req, res) => {
-    db.query('SELECT * FROM records ORDER BY recorded_at ASC', async (err, results) => {
+    const userId = req.query.userId || 1;
+    db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], async (err, results) => {
         if (err) throw err;
 
         if (results.length === 0) {
