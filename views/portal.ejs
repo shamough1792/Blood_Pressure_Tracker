@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>血壓記錄<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></title>
+    <title>選擇使用者<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2d6a4f">
@@ -20,8 +20,7 @@
 </head>
 <body>
     <div class="container" style="justify-content:center;">
-        <h1 style="text-align:center;font-size:32px;margin-bottom:8px;color:#1a1a2e;">血壓記錄</h1>
-        <p style="text-align:center;color:#666;font-size:18px;margin-bottom:16px;">選擇使用者</p>
+        <h1 style="text-align:center;font-size:32px;margin-bottom:8px;color:#1a1a2e;">選擇使用者</h1>
 
         <div class="user-grid">
             <% users.forEach(function(u) { %>
