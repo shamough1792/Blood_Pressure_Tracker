@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>管理使用者<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2d6a4f">
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        .admin-container{max-width:720px;margin:0 auto;padding:20px 16px;width:100%}
+        .admin-card{background:#fff;border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+        .admin-card h2{font-size:24px;margin-bottom:16px;color:#1a1a2e}
+        .user-row{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid #f0f0f0}
+        .user-row:last-child{border-bottom:none}
+        .mini-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px;flex-shrink:0}
+        .user-row-name{font-size:20px;font-weight:600;flex:1;color:#1a1a2e}
+        .btn-sm{padding:10px 16px;font-size:15px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+        .btn-sm-edit{background:#e8f5e9;color:#2d6a4f}
+        .btn-sm-delete{background:#ffebee;color:#c62828}
+        .form-inline{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+        .form-inline .form-group{flex:1;min-width:150px;margin-bottom:0}
+        .form-inline input[type=color]{height:52px;padding:4px;width:70px;cursor:pointer}
+        .import-section{border:2px dashed #d0d7de;border-radius:16px;padding:28px;text-align:center}
+        .import-section select{width:100%;padding:14px 16px;font-size:20px;border:2px solid #d0d7de;border-radius:12px;margin-bottom:12px}
+        .import-result{margin-top:12px;padding:12px 16px;border-radius:8px;background:#e8f5e9;color:#2e7d32;font-size:16px;display:none}
+        .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center}
+        .modal-box{background:#fff;border-radius:20px;padding:28px;max-width:400px;width:90%}
+        .modal-box h2{font-size:24px;margin-bottom:16px;color:#1a1a2e}
+        .modal-actions{display:flex;gap:12px;margin-top:20px}
+        .modal-actions .btn{max-width:none;flex:1}
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="top-nav" style="max-width:720px;">
+            <a href="/" class="nav-btn">← 返回</a>
+            <h1>管理使用者</h1>
+            <span style="width:60px;"></span>
+        </div>
+
+        <!-- 使用者列表 -->
+        <div class="admin-card">
+            <h2>使用者列表</h2>
+            <% users.forEach(function(u) { %>
+            <div class="user-row">
+                <div class="mini-avatar" style="background:<%= u.color %>"><%= u.name.charAt(0) %></div>
+                <span class="user-row-name"><%= u.name %></span>
+                <button class="btn-sm btn-sm-edit" onclick='editUser(<%= u.id %>, "<%= u.name %>", "<%= u.color %>")'>編輯</button>
+                <button class="btn-sm btn-sm-delete" onclick="deleteUser(<%= u.id %>, '<%= u.name %>')">刪除</button>
+            </div>
+            <% }); %>
+        </div>
+
+        <!-- 新增使用者 -->
+        <div class="admin-card">
+            <h2>新增使用者</h2>
+            <form id="addForm" onsubmit="return addUser(event)">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" id="newName" required style="width:100%;padding:14px 16px;font-size:20px;border:2px solid #d0d7de;border-radius:12px">
+                    </div>
+                    <div class="form-group">
+                        <label>顏色</label>
+                        <input type="color" id="newColor" value="#4CAF50" style="height:52px;width:80px;padding:4px;border:2px solid #d0d7de;border-radius:12px;cursor:pointer">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="padding:14px 24px;font-size:18px;max-width:none;margin-top:20px;">新增</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- SQL 匯入 -->
+        <div class="admin-card">
+            <h2>匯入 SQL</h2>
+            <div class="import-section">
+                <p style="font-size:16px;color:#666;margin-bottom:12px;">上傳從其他 Docker container 匯出的 SQL 檔，將記錄匯入指定使用者</p>
+                <select id="importUser">
+                    <% users.forEach(function(u) { %>
+                    <option value="<%= u.id %>"><%= u.name %></option>
+                    <% }); %>
+                </select>
+                <form id="importForm" onsubmit="return importSql(event)">
+                    <input type="file" id="sqlFile" accept=".sql" required style="font-size:16px;margin:8px 0;">
+                    <br>
+                    <button type="submit" class="btn btn-primary" style="max-width:none;padding:14px 28px;font-size:18px;margin-top:8px;">上傳並匯入</button>
+                </form>
+                <div id="importResult" class="import-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯彈窗 -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <h2>編輯使用者</h2>
+            <input type="hidden" id="editId">
+            <div class="form-group"><label>姓名</label><input type="text" id="editName" style="width:100%;padding:14px 16px;font-size:20px;border:2px solid #d0d7de;border-radius:12px"></div>
+            <div class="form-group"><label>顏色</label><input type="color" id="editColor" style="height:52px;width:80px;padding:4px;border:2px solid #d0d7de;border-radius:12px"></div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="saveEdit()">儲存</button>
+                <button class="btn btn-back" onclick="closeEdit()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function addUser(e) {
+        e.preventDefault();
+        const name = document.getElementById('newName').value;
+        const color = document.getElementById('newColor').value;
+        fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, color })
+        }).then(r => r.json()).then(() => location.reload());
+        return false;
+    }
+
+    function deleteUser(id, name) {
+        if (!confirm('確定刪除 ' + name + '？所有相關血壓記錄也會一併刪除。')) return;
+        fetch('/api/users/' + id, { method: 'DELETE' })
+            .then(r => r.json()).then(() => location.reload());
+    }
+
+    function editUser(id, name, color) {
+        document.getElementById('editModal').style.display = 'flex';
+        document.getElementById('editId').value = id;
+        document.getElementById('editName').value = name;
+        document.getElementById('editColor').value = color;
+    }
+
+    function closeEdit() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function saveEdit() {
+        const id = document.getElementById('editId').value;
+        const name = document.getElementById('editName').value;
+        const color = document.getElementById('editColor').value;
+        fetch('/api/users/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, color })
+        }).then(r => r.json()).then(() => location.reload());
+    }
+
+    function importSql(e) {
+        e.preventDefault();
+        const file = document.getElementById('sqlFile').files[0];
+        const userId = document.getElementById('importUser').value;
+        if (!file) return alert('請選擇 SQL 檔案');
+
+        const formData = new FormData();
+        formData.append('sqlFile', file);
+        formData.append('user_id', userId);
+
+        fetch('/api/import-sql', { method: 'POST', body: formData })
+            .then(r => r.text()).then(msg => {
+                const el = document.getElementById('importResult');
+                el.style.display = 'block';
+                el.textContent = msg;
+            }).catch(() => alert('匯入失敗'));
+        return false;
+    }
+
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) closeEdit();
+    });
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+</body>
+</html>
