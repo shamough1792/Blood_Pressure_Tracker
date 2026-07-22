@@ -131,26 +131,17 @@ app.post('/api/import-sql', async (req, res) => {
 
     if (rows.length === 0) return res.send('找不到可匯入的記錄');
 
-    // 分批匯入（每批 100 筆，避免卡住整個網頁）
-    const BATCH_SIZE = 100;
+    // 逐筆匯入，每筆之間讓出事件循環，避免卡住
     let success = 0, failed = 0;
 
-    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-        const batch = rows.slice(i, i + BATCH_SIZE);
-        const results = await Promise.allSettled(
-            batch.map(row =>
-                new Promise((resolve, reject) => {
-                    db.query('INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)', row, (err) => {
-                        if (err) reject(err);
-                        else resolve();
-                    });
-                })
-            )
-        );
-        success += results.filter(r => r.status === 'fulfilled').length;
-        failed += results.filter(r => r.status === 'rejected').length;
-        // 每批之間讓出事件循環
-        await new Promise(r => setImmediate(r));
+    for (const row of rows) {
+        await new Promise(resolve => {
+            db.query('INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)', row, (err) => {
+                if (err) failed++;
+                else success++;
+                setImmediate(resolve);
+            });
+        });
     }
 
     res.send(`匯入完成：成功 ${success} 筆，失敗 ${failed} 筆`);
