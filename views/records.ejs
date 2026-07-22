@@ -16,7 +16,7 @@
         <div class="top-nav">
             <a href="/" class="nav-btn">← 返回</a>
             <h1>血壓記錄<%= typeof userName !== 'undefined' && userName ? ' (' + userName + ')' : '' %></h1>
-            <a href="/export/excel?userId=<%= userId %>" class="nav-btn" style="font-size:15px;">📥 匯出</a>
+            <a href="/export/excel?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="nav-btn" style="font-size:15px;">📥 匯出</a>
         </div>
 
         <%
@@ -39,7 +39,7 @@
         <!-- 月份導航 -->
         <div class="month-nav">
             <% if (prevMonth) { %>
-                <a href="/records?yearMonth=<%= prevMonth %>&userId=<%= userId %>" class="arrow-btn">
+                <a href="/records?yearMonth=<%= prevMonth %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="arrow-btn">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 </a>
             <% } else { %>
@@ -49,11 +49,11 @@
             <% } %>
             <select class="month-select" onchange="location=this.value">
                 <% months.forEach(function(m) { %>
-                    <option value="/records?yearMonth=<%= m %>&userId=<%= userId %>" <%= m === currentMonth ? 'selected' : '' %>><%= formatMonth(m) %></option>
+                    <option value="/records?yearMonth=<%= m %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" <%= m === currentMonth ? 'selected' : '' %>><%= formatMonth(m) %></option>
                 <% }); %>
             </select>
             <% if (nextMonth) { %>
-                <a href="/records?yearMonth=<%= nextMonth %>&userId=<%= userId %>" class="arrow-btn">
+                <a href="/records?yearMonth=<%= nextMonth %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="arrow-btn">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </a>
             <% } else { %>
