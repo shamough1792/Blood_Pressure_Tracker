@@ -14,7 +14,7 @@
     <div class="container">
         <!-- 頂部導航 -->
         <div class="top-nav">
-            <a href="/" class="nav-btn">← 返回</a>
+            <a href="/bp/<%= userId %>?name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="nav-btn">← 返回</a>
             <h1>血壓記錄<%= typeof userName !== 'undefined' && userName ? ' (' + userName + ')' : '' %></h1>
             <a href="/export/excel?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="nav-btn" style="font-size:15px;">📥 匯出</a>
         </div>
