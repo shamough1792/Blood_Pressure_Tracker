@@ -84,9 +84,16 @@
                 <form id="importForm" onsubmit="return importSql(event)">
                     <input type="file" id="sqlFile" accept=".sql" required style="font-size:16px;margin:8px 0;">
                     <br>
-                    <button type="submit" class="btn btn-primary" style="max-width:none;padding:14px 28px;font-size:18px;margin-top:8px;">上傳並匯入</button>
+                    <button type="submit" id="importBtn" class="btn btn-primary" style="max-width:none;padding:14px 28px;font-size:18px;margin-top:8px;">上傳並匯入</button>
                 </form>
+                <div id="importProgress" style="display:none;margin:12px 0;">
+                    <div style="width:100%;height:24px;background:#f0f0f0;border-radius:12px;overflow:hidden;">
+                        <div id="importBar" style="width:100%;height:100%;background:linear-gradient(90deg,#2d6a4f 30%,#4caf50 50%,#2d6a4f 70%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:12px;"></div>
+                    </div>
+                    <p style="font-size:16px;color:#666;margin-top:6px;">正在匯入中，請稍候...</p>
+                </div>
                 <div id="importResult" class="import-result"></div>
+                <style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style>
             </div>
         </div>
     </div>
@@ -156,12 +163,25 @@
         formData.append('sqlFile', file);
         formData.append('user_id', userId);
 
+        document.getElementById('importProgress').style.display = 'block';
+        document.getElementById('importResult').style.display = 'none';
+        document.getElementById('importBtn').disabled = true;
+        document.getElementById('importBtn').textContent = '匯入中...';
+
         fetch('/api/import-sql', { method: 'POST', body: formData })
             .then(r => r.text()).then(msg => {
+                document.getElementById('importProgress').style.display = 'none';
                 const el = document.getElementById('importResult');
                 el.style.display = 'block';
                 el.textContent = msg;
-            }).catch(() => alert('匯入失敗'));
+                document.getElementById('importBtn').disabled = false;
+                document.getElementById('importBtn').textContent = '上傳並匯入';
+            }).catch(() => {
+                document.getElementById('importProgress').style.display = 'none';
+                alert('匯入失敗');
+                document.getElementById('importBtn').disabled = false;
+                document.getElementById('importBtn').textContent = '上傳並匯入';
+            });
         return false;
     }
 
