@@ -16,7 +16,7 @@
         <div class="top-nav">
             <h1>血壓記錄<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></h1>
             <div style="display:flex;gap:4px;">
-                <a href="/records" class="nav-btn">記錄</a>
+                <a href="/records?userId=<%= typeof userId !== 'undefined' ? userId : '' %>" class="nav-btn">記錄</a>
             </div>
         </div>
 
@@ -35,6 +35,7 @@
             <!-- 隱藏欄位：自動填入 -->
             <input type="hidden" name="record_date" id="recordDate">
             <input type="hidden" name="time_of_day" id="timeOfDay">
+            <input type="hidden" name="user_id" value="<%= typeof userId !== 'undefined' ? userId : '' %>">
 
             <!-- 步驟 1: 高壓 -->
             <div class="step active" id="step-1">
