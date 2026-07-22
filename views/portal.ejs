@@ -25,7 +25,7 @@
 
         <div class="user-grid">
             <% users.forEach(function(u) { %>
-                <a href="/bp/<%= u.id %>" class="user-card" onclick="localStorage.setItem('bp_user', '<%= u.id %>')">
+                <a href="/bp/<%= u.id %>?name=<%= encodeURIComponent(u.name) %>" class="user-card" onclick="localStorage.setItem('bp_user', '<%= u.id %>')">
                     <div class="user-avatar" style="background:<%= u.color %>">
                         <%= u.name.charAt(0) %>
                     </div>

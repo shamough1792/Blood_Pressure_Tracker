@@ -40,10 +40,15 @@ app.get('/', (req, res) => {
 
 // 血壓記錄頁
 app.get('/bp/:userId', (req, res) => {
-    res.render('index', {
-        successMessage: null,
-        titleSuffix: process.env.TITLE_SUFFIX || '',
-        userId: req.params.userId
+    const userId = req.params.userId;
+    db.query('SELECT name FROM users WHERE id = ?', [userId], (err, users) => {
+        if (err || !users.length) return res.redirect('/');
+        res.render('index', {
+            successMessage: null,
+            titleSuffix: process.env.TITLE_SUFFIX || '',
+            userId,
+            userName: users[0].name
+        });
     });
 });
 
@@ -164,7 +169,10 @@ app.post('/add', (req, res) => {
             console.error('Error inserting record:', err);
             return res.status(500).send('Error adding record');
         }
-        res.render('index', { successMessage: '血壓記錄已成功添加！', titleSuffix: process.env.TITLE_SUFFIX || '', userId: user_id || 1 });
+        db.query('SELECT name FROM users WHERE id = ?', [user_id || 1], (err2, users) => {
+            const userName = users && users.length ? users[0].name : '';
+            res.render('index', { successMessage: '血壓記錄已成功添加！', titleSuffix: process.env.TITLE_SUFFIX || '', userId: user_id || 1, userName });
+        });
     });
 });
 
@@ -176,7 +184,7 @@ app.get('/records', (req, res) => {
         // Group records by year and month
         const groupedRecords = results.reduce((acc, record) => {
             const date = new Date(record.recorded_at);
-            const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // Format: YYYY-MM
+            const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
             if (!acc[yearMonth]) {
                 acc[yearMonth] = [];
@@ -190,11 +198,9 @@ app.get('/records', (req, res) => {
             return acc;
         }, {});
 
-        // Get the selected month from the query parameter or default to the latest month
         const selectedMonth = req.query.yearMonth || (Object.keys(groupedRecords).length ? Object.keys(groupedRecords)[0] : null);
-
-        // Pass groupedRecords and selectedMonth to the view
-        res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '', userId });
+        const userName = req.query.name || '';
+        res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '', userId, userName });
     });
 });
 

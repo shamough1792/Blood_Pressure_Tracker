@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>血壓記錄<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></title>
+    <title>血壓記錄<%= typeof userName !== 'undefined' && userName ? ' (' + userName + ')' : '' %><%= typeof titleSuffix !== 'undefined' && titleSuffix && !userName ? ' (' + titleSuffix + ')' : '' %></title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2d6a4f">
@@ -14,8 +14,8 @@
     <div class="container">
         <!-- 頂部導航 -->
         <div class="top-nav">
-            <a href="/?userId=<%= userId %>" class="nav-btn">← 返回</a>
-            <h1>血壓記錄<%= typeof titleSuffix !== 'undefined' && titleSuffix ? ' (' + titleSuffix + ')' : '' %></h1>
+            <a href="/" class="nav-btn">← 返回</a>
+            <h1>血壓記錄<%= typeof userName !== 'undefined' && userName ? ' (' + userName + ')' : '' %></h1>
             <a href="/export/excel?userId=<%= userId %>" class="nav-btn" style="font-size:15px;">📥 匯出</a>
         </div>
 
