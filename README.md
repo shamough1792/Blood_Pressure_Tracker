@@ -28,6 +28,29 @@
 
 ### 方式一：Docker（推薦）
 
+#### 使用預先 build 好的 image
+
+```yaml
+services:
+  app:
+    image: ghcr.io/shamough1792/blood_pressure_tracker:latest
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: Asia/Hong_Kong
+      DB_HOST: 192.168.1.222
+      DB_USER: tracker_user
+      DB_PASSWORD: 'your_password'
+      DB_NAME: blood_test
+    restart: unless-stopped
+```
+
+```bash
+docker compose up -d
+```
+
+#### 自行 build
+
 ```yaml
 services:
   app:
