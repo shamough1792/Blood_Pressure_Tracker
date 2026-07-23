@@ -299,6 +299,15 @@ body {
     color: #c62828;
 }
 
+.bp-low {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.record-card.bp-low-border {
+    border-left-color: #42a5f5;
+}
+
 /* --- 成功頁 --- */
 .success-screen {
     display: none;
