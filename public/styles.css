@@ -477,10 +477,7 @@ body {
     color: #616161;
 }
 
-.cal-cell.sat .cal-daynum {
-    color: #1565c0;
-}
-
+.cal-cell.sat .cal-daynum,
 .cal-cell.sun .cal-daynum {
     color: #d32f2f;
 }
