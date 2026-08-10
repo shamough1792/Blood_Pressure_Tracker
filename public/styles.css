@@ -778,10 +778,12 @@ body {
     appearance: auto;
 }
 
-/* 日期輸入框：手機上原生分欄（年/月/日）有固有最小寬度，
-   字大時內容會超出框外，縮細字體即可 */
+/* 日期輸入框：iOS Safari 唔受 width:100% 控制，跟內容固有寬度排，
+   需要 appearance:none 強制當普通輸入框處理；Android 冇問題 */
 .form-page input[type="date"] {
     min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 @media (max-width: 480px) {
