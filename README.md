@@ -163,7 +163,11 @@ services:
 
 <br>
 
-![記錄頁](images/record.png)
+![記錄頁（月曆檢視）](images/record.png)
+
+<br>
+
+![統計頁](images/stats.png)
 
 <br>
 
