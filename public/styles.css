@@ -38,6 +38,21 @@ body {
     margin-bottom: 16px;
 }
 
+/* 標題絕對置中：左右元素寬度唔對稱都置中 */
+.top-nav.center-title {
+    position: relative;
+}
+
+.top-nav.center-title h1 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 70%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .top-nav h1 {
     font-size: 26px;
     color: #1a1a2e;
