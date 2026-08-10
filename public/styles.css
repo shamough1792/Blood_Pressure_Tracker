@@ -38,6 +38,21 @@ body {
     margin-bottom: 16px;
 }
 
+/* 標題絕對置中：左右元素寬度唔對稱都置中 */
+.top-nav.center-title {
+    position: relative;
+}
+
+.top-nav.center-title h1 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 70%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .top-nav h1 {
     font-size: 26px;
     color: #1a1a2e;
@@ -45,7 +60,7 @@ body {
 }
 
 .top-nav .nav-btn {
-    background: #2d6a4f;
+    background: linear-gradient(135deg, #2d6a4f, #1b5e3f);
     border: none;
     font-size: 16px;
     color: #fff;
@@ -53,13 +68,15 @@ body {
     padding: 10px 16px;
     font-weight: 600;
     border-radius: 10px;
-    transition: background 0.2s, opacity 0.2s;
+    transition: transform 0.15s, box-shadow 0.2s;
     text-decoration: none;
     display: inline-block;
+    box-shadow: 0 3px 10px rgba(45, 106, 79, 0.3);
 }
 
 .top-nav .nav-btn:hover {
-    opacity: 0.85;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(45, 106, 79, 0.4);
 }
 
 /* --- 進度條 --- */
@@ -151,30 +168,46 @@ body {
     font-size: 22px;
     font-weight: 700;
     border: none;
-    border-radius: 14px;
+    border-radius: 16px;
     cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
+    transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
     text-align: center;
     text-decoration: none;
     display: inline-block;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 
 .btn:active {
     transform: scale(0.97);
 }
 
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+
+.btn:focus-visible,
+.nav-btn:focus-visible,
+.btn-sm:focus-visible {
+    outline: 3px solid rgba(45, 106, 79, 0.4);
+    outline-offset: 2px;
+}
+
 .btn-primary {
-    background: #2d6a4f;
+    background: linear-gradient(135deg, #2d6a4f, #1b5e3f);
     color: #fff;
+    box-shadow: 0 4px 14px rgba(45, 106, 79, 0.35);
 }
 
 .btn-primary:hover {
-    background: #1b4d3d;
+    background: linear-gradient(135deg, #1b5e3f, #144d33);
+    box-shadow: 0 6px 18px rgba(45, 106, 79, 0.45);
 }
 
 .btn-secondary {
     background: #e8f5e9;
     color: #2d6a4f;
+    box-shadow: 0 3px 10px rgba(45, 106, 79, 0.15);
 }
 
 .btn-secondary:hover {
@@ -182,23 +215,26 @@ body {
 }
 
 .btn-danger {
-    background: #d32f2f;
+    background: linear-gradient(135deg, #e53935, #c62828);
     color: #fff;
+    box-shadow: 0 4px 14px rgba(229, 57, 53, 0.35);
 }
 
 .btn-danger:hover {
-    background: #b71c1c;
+    background: linear-gradient(135deg, #c62828, #a51f1f);
+    box-shadow: 0 6px 18px rgba(229, 57, 53, 0.45);
 }
 
 .btn-export {
-    background: #1565c0;
+    background: linear-gradient(135deg, #1e88e5, #1565c0);
     color: #fff;
     padding: 12px 20px;
     font-size: 18px;
+    box-shadow: 0 3px 10px rgba(21, 101, 192, 0.3);
 }
 
 .btn-export:hover {
-    background: #0d47a1;
+    background: linear-gradient(135deg, #1565c0, #0d47a1);
 }
 
 .btn-back {
@@ -206,6 +242,7 @@ body {
     color: #333;
     padding: 12px 20px;
     font-size: 18px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 .btn-back:hover {
@@ -379,6 +416,11 @@ body {
 .month-nav .arrow-btn:hover {
     background: #e8f5e9;
     border-color: #2d6a4f;
+    box-shadow: 0 3px 10px rgba(45, 106, 79, 0.25);
+}
+
+.month-nav .arrow-btn:active {
+    transform: scale(0.92);
 }
 
 .month-select {
@@ -736,6 +778,21 @@ body {
     appearance: auto;
 }
 
+/* 日期輸入框：iOS Safari 唔受 width:100% 控制，跟內容固有寬度排，
+   需要 appearance:none 強制當普通輸入框處理；Android 冇問題 */
+.form-page input[type="date"] {
+    min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+@media (max-width: 480px) {
+    .form-page input[type="date"] {
+        font-size: 17px;
+        padding: 16px 10px;
+    }
+}
+
 .form-actions {
     display: flex;
     flex-direction: column;
@@ -981,6 +1038,13 @@ body {
     border: none;
     cursor: pointer;
     font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.btn-sm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
 }
 
 .btn-sm-edit {
@@ -1085,4 +1149,197 @@ body {
     .admin-container { padding: 12px; }
     .admin-card { padding: 16px; }
     .form-inline .form-group { min-width: 100%; }
+}
+
+/* --- 統計頁 --- */
+.range-nav {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 16px 0;
+}
+
+.range-btn {
+    padding: 10px 18px;
+    border-radius: 20px;
+    border: 2px solid #d0d7de;
+    background: #fff;
+    color: #1a1a2e;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+}
+
+.range-btn:hover {
+    background: #f0f7f2;
+    transform: translateY(-1px);
+}
+
+.range-btn.selected {
+    background: linear-gradient(135deg, #2d6a4f, #1b5e3f);
+    border-color: #2d6a4f;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(45, 106, 79, 0.35);
+}
+
+.stat-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.stat-value {
+    display: inline-block;
+    min-width: 56px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.stat-total {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin: 8px 0 16px;
+}
+
+.chart-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+}
+
+.chart-card h3 {
+    font-size: 20px;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+}
+
+/* 固定高度包裝層：Chart.js responsive 用 ResizeObserver 睇容器，
+   容器高度固定，canvas 絕對定位填滿，避免無限 resize 循環 */
+.chart-wrap {
+    position: relative;
+    height: 260px;
+    width: 100%;
+}
+
+.chart-wrap canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+/* 放大檢視 */
+.zoom-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.zoom-box {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 900px;
+    padding: 16px;
+    position: relative;
+}
+
+.zoom-box h3 {
+    font-size: 18px;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+}
+
+.zoom-close {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+}
+
+.zoom-wrap {
+    position: relative;
+    height: 60vh;
+    width: 100%;
+}
+
+.zoom-wrap canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* 統計按鈕：橫跨整行，電腦手機通用 */
+.stats-nav-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 14px;
+    font-size: 17px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, #2d6a4f, #1b5e3f);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(45, 106, 79, 0.3);
+}
+
+.stats-nav-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(45, 106, 79, 0.4);
+}
+
+/* 手機：記錄頁導航 返回/標題/匯出 一行排，標題縮細 */
+@media (max-width: 480px) {
+    .top-nav.has-tools { flex-wrap: wrap; gap: 8px; }
+    .top-nav.has-tools h1 { flex: 1 1 auto; font-size: 20px; text-align: center; min-width: 0; }
+    .top-nav.has-tools .nav-btn { padding: 10px 12px; font-size: 15px; }
+}
+
+@media (max-width: 480px) {
+    .stat-cards { gap: 8px; }
+    .stat-card { padding: 10px 6px; }
+    .stat-label { font-size: 12px; margin-bottom: 6px; }
+    .stat-value { min-width: 48px; padding: 6px 10px; font-size: 22px; }
+    .chart-card { padding: 12px; }
+    .chart-card h3 { font-size: 17px; margin-bottom: 8px; }
+    .chart-wrap { height: 180px; }
 }
