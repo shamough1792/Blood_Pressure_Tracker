@@ -549,19 +549,19 @@ body {
     color: #1a1a2e;
 }
 
-.val-high {
-    background: #ffcdd2;
+.val-sys {
+    background: #ffebee;
     color: #b71c1c;
 }
 
-.val-low {
-    background: #b3e5fc;
+.val-dia {
+    background: #e3f2fd;
     color: #0d47a1;
 }
 
-.val-normal {
-    background: #c8e6c9;
-    color: #1b5e20;
+.val-heart {
+    background: #fff8e1;
+    color: #e65100;
 }
 
 .record-card {
