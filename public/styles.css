@@ -1165,9 +1165,19 @@ body {
     margin-bottom: 12px;
 }
 
-.chart-card canvas {
+/* 固定高度包裝層：Chart.js responsive 用 ResizeObserver 睇容器，
+   容器高度固定，canvas 絕對定位填滿，避免無限 resize 循環 */
+.chart-wrap {
+    position: relative;
     height: 260px;
     width: 100%;
+}
+
+.chart-wrap canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
 }
 
 @media (max-width: 480px) {
@@ -1177,5 +1187,5 @@ body {
     .stat-value { min-width: 48px; padding: 6px 10px; font-size: 22px; }
     .chart-card { padding: 12px; }
     .chart-card h3 { font-size: 17px; margin-bottom: 8px; }
-    .chart-card canvas { height: 180px; }
+    .chart-wrap { height: 180px; }
 }
