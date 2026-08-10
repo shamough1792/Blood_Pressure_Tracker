@@ -474,6 +474,14 @@ body {
     color: #1a1a2e;
 }
 
+.cal-cell.sat .cal-daynum {
+    color: #1565c0;
+}
+
+.cal-cell.sun .cal-daynum {
+    color: #d32f2f;
+}
+
 .cal-readings {
     display: flex;
     flex-direction: column;

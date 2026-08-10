@@ -112,8 +112,9 @@
             <div class="cal-grid">
                 <% for (var i = 0; i < firstWeekday; i++) { %><span class="cal-blank"></span><% } %>
                 <% for (var day = 1; day <= daysInMonth; day++) { %>
+                    <% var wd = new Date(year, month - 1, day).getDay(); %>
                     <a href="/records?yearMonth=<%= currentMonth %>&day=<%= day %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>"
-                       class="cal-cell <%= dayStatus(day) %> <%= day === selectedDay ? 'selected' : '' %>">
+                       class="cal-cell <%= dayStatus(day) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %> <%= day === selectedDay ? 'selected' : '' %>">
                         <span class="cal-daynum"><%= day %></span>
                         <% if (dayMap[day]) { %>
                             <span class="cal-readings">
