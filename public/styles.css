@@ -542,6 +542,28 @@ body {
     font-size: 18px;
 }
 
+.val-box {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    color: #1a1a2e;
+}
+
+.val-high {
+    background: #ffcdd2;
+    color: #b71c1c;
+}
+
+.val-low {
+    background: #b3e5fc;
+    color: #0d47a1;
+}
+
+.val-normal {
+    background: #c8e6c9;
+    color: #1b5e20;
+}
+
 .record-card {
     background: #fff;
     border-radius: 16px;

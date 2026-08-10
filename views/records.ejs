@@ -144,7 +144,11 @@
                 <div class="day-record <%= bpClass(r) %>">
                     <div class="day-record-head">
                         <span class="day-period"><%= p %></span>
-                        <span class="day-values">高壓 <b><%= r.high_pressure %></b>　低壓 <b><%= r.low_pressure %></b>　心跳 <b><%= r.heartbeat %></b></span>
+                        <span class="day-values">
+                            高壓 <b class="val-box <%= hp >= 140 ? 'val-high' : (hp < 90 ? 'val-low' : 'val-normal') %>"><%= r.high_pressure %></b>
+                            低壓 <b class="val-box <%= lp >= 90 ? 'val-high' : (lp < 60 ? 'val-low' : 'val-normal') %>"><%= r.low_pressure %></b>
+                            心跳 <b class="val-box"><%= r.heartbeat %></b>
+                        </span>
                         <span class="bp-status <%= statusClass %>" style="font-size:14px;padding:4px 12px;"><%= statusText %></span>
                     </div>
                     <div class="card-actions">
