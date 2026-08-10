@@ -146,11 +146,11 @@
                         <span class="day-period"><%= p %></span>
                         <span class="day-values">
                             <span class="dv-row">
-                                高壓 <b class="val-box val-sys"><%= r.high_pressure %></b>
-                                低壓 <b class="val-box val-dia"><%= r.low_pressure %></b>
+                                <span class="dv-label">高壓</span> <b class="val-box val-sys"><%= r.high_pressure %></b>
+                                <span class="dv-label">低壓</span> <b class="val-box val-dia"><%= r.low_pressure %></b>
                             </span>
                             <span class="dv-row">
-                                心跳 <b class="val-box val-heart"><%= r.heartbeat %></b>
+                                <span class="dv-label">心跳</span> <b class="val-box val-heart"><%= r.heartbeat %></b>
                             </span>
                         </span>
                         <span class="bp-status <%= statusClass %>" style="font-size:14px;padding:4px 12px;"><%= statusText %></span>
