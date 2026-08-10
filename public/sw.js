@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bp-tracker-v2';
+const CACHE_NAME = 'bp-tracker-v3';
 const STATIC_ASSETS = [
   '/styles.css',
   '/manifest.json',
@@ -38,11 +38,17 @@ self.addEventListener('fetch', event => {
   // Only handle same-origin requests
   if (url.origin !== location.origin) return;
 
-  // Static assets: cache-first
+  // Static assets: stale-while-revalidate (always fresh in background)
   if (STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(
       caches.match(event.request).then(cached => {
-        return cached || fetch(event.request);
+        const network = fetch(event.request).then(response => {
+          if (response && response.ok) {
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, response));
+          }
+          return response.clone();
+        }).catch(() => cached);
+        return cached || network;
       })
     );
     return;
