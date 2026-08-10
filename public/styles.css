@@ -778,6 +778,20 @@ body {
     appearance: auto;
 }
 
+/* 日期輸入框：手機上原生分欄（年/月/日）有固有最小寬度，
+   字大時內容會超出框外，需要縮窄同限寬 */
+.form-page input[type="date"] {
+    max-width: 320px;
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .form-page input[type="date"] {
+        font-size: 17px;
+        padding: 16px 10px;
+    }
+}
+
 .form-actions {
     display: flex;
     flex-direction: column;
