@@ -492,6 +492,28 @@ body {
     font-weight: 600;
 }
 
+.cal-val {
+    display: inline-block;
+    padding: 0 4px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.cal-val.r-high {
+    background: #ffcdd2;
+    color: #b71c1c;
+}
+
+.cal-val.r-low {
+    background: #b3e5fc;
+    color: #0d47a1;
+}
+
+.cal-val.r-normal {
+    background: #c8e6c9;
+    color: #1b5e20;
+}
+
 /* --- 當日詳細 --- */
 .day-detail {
     background: #fff;

@@ -118,8 +118,13 @@
                         <span class="cal-daynum"><%= day %></span>
                         <% if (dayMap[day]) { %>
                             <span class="cal-readings">
-                                <% if (dayMap[day]['早']) { %><span>早 <%= dayMap[day]['早'].high_pressure %>/<%= dayMap[day]['早'].low_pressure %></span><% } %>
-                                <% if (dayMap[day]['晚']) { %><span>晚 <%= dayMap[day]['晚'].high_pressure %>/<%= dayMap[day]['晚'].low_pressure %></span><% } %>
+                                <% ['早', '晚'].forEach(function(p) { if (dayMap[day][p]) {
+                                    var rhp = parseInt(dayMap[day][p].high_pressure);
+                                    var rlp = parseInt(dayMap[day][p].low_pressure);
+                                    var rcls = rhp >= 140 ? 'r-high' : (rhp < 90 ? 'r-low' : 'r-normal');
+                                %>
+                                    <span><%= p %> <b class="cal-val <%= rcls %>"><%= dayMap[day][p].high_pressure %></b>/<%= dayMap[day][p].low_pressure %></span>
+                                <% } }); %>
                             </span>
                         <% } %>
                     </a>
