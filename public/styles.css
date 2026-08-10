@@ -1241,6 +1241,17 @@ body {
     font-size: 17px;
     margin-bottom: 16px;
     box-sizing: border-box;
+    background: #2d6a4f;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.stats-nav-btn:hover {
+    opacity: 0.85;
 }
 
 /* 手機：記錄頁導航 返回/標題/匯出 一行排，標題縮細 */
