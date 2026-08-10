@@ -1232,12 +1232,22 @@ body {
     height: 100%;
 }
 
-/* 手機：工具按鈕多嘅頁面 (記錄頁)，導航分兩行 */
+/* 統計按鈕：橫跨整行，電腦手機通用 */
+.stats-nav-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 14px;
+    font-size: 17px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+}
+
+/* 手機：記錄頁導航 返回/標題/匯出 一行排，標題縮細 */
 @media (max-width: 480px) {
     .top-nav.has-tools { flex-wrap: wrap; gap: 8px; }
-    .top-nav.has-tools h1 { order: 2; flex: 1 1 auto; font-size: 20px; text-align: center; min-width: 0; }
-    .top-nav.has-tools .nav-btn { order: 3; flex: 1 1 45%; text-align: center; padding: 12px 8px; font-size: 16px; }
-    .top-nav.has-tools .nav-btn:first-child { order: 1; flex: 0 0 auto; padding: 12px 14px; }
+    .top-nav.has-tools h1 { flex: 1 1 auto; font-size: 20px; text-align: center; min-width: 0; }
+    .top-nav.has-tools .nav-btn { padding: 10px 12px; font-size: 15px; }
 }
 
 @media (max-width: 480px) {
