@@ -1169,3 +1169,13 @@ body {
     height: 260px;
     width: 100%;
 }
+
+@media (max-width: 480px) {
+    .stat-cards { gap: 8px; }
+    .stat-card { padding: 10px 6px; }
+    .stat-label { font-size: 12px; margin-bottom: 6px; }
+    .stat-value { min-width: 48px; padding: 6px 10px; font-size: 22px; }
+    .chart-card { padding: 12px; }
+    .chart-card h3 { font-size: 17px; margin-bottom: 8px; }
+    .chart-card canvas { height: 180px; }
+}

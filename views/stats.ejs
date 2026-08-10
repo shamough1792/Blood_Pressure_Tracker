@@ -57,38 +57,43 @@
         </div>
         <p class="stat-total">共 <%= stats.total %> 次記錄（<%= range === 0 ? '全部' : '最近 ' + range + ' 個月' %>）</p>
 
-        <!-- 趨勢圖 -->
+        <!-- 趨勢圖：血壓 -->
         <div class="chart-card">
             <h3>血壓趨勢</h3>
             <canvas id="bpChart"></canvas>
         </div>
 
+        <!-- 趨勢圖：心跳 -->
+        <div class="chart-card">
+            <h3>心跳趨勢</h3>
+            <canvas id="heartChart"></canvas>
+        </div>
+
         <script>
             var data = <%- JSON.stringify(chartData) %>;
-            var ctx = document.getElementById('bpChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.map(function(d) { return d.label; }),
-                    datasets: [
-                        { label: '高壓', data: data.map(function(d) { return d.high; }), borderColor: '#e53935', backgroundColor: 'rgba(229,57,53,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 },
-                        { label: '低壓', data: data.map(function(d) { return d.low; }), borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 },
-                        { label: '心跳', data: data.map(function(d) { return d.heart; }), borderColor: '#f9a825', backgroundColor: 'rgba(249,168,37,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { labels: { font: { size: 14 }, boxWidth: 20 } }
-                    },
-                    scales: {
-                        y: { beginAtZero: false, ticks: { font: { size: 12 } } },
-                        x: { ticks: { maxTicksLimit: 10, font: { size: 11 } } }
+            function makeChart(id, datasets) {
+                new Chart(document.getElementById(id).getContext('2d'), {
+                    type: 'line',
+                    data: { labels: data.map(function(d) { return d.label; }), datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { labels: { font: { size: 13 }, boxWidth: 20 } } },
+                        scales: {
+                            y: { beginAtZero: false, ticks: { font: { size: 11 } } },
+                            x: { ticks: { maxTicksLimit: 7, font: { size: 10 } } }
+                        }
                     }
-                }
-            });
+                });
+            }
+            makeChart('bpChart', [
+                { label: '高壓', data: data.map(function(d) { return d.high; }), borderColor: '#e53935', backgroundColor: 'rgba(229,57,53,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 },
+                { label: '低壓', data: data.map(function(d) { return d.low; }), borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
+            ]);
+            makeChart('heartChart', [
+                { label: '心跳', data: data.map(function(d) { return d.heart; }), borderColor: '#f9a825', backgroundColor: 'rgba(249,168,37,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
+            ]);
         </script>
         <% } else { %>
             <div class="empty-state">所選範圍內沒有記錄</div>
