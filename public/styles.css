@@ -1232,6 +1232,14 @@ body {
     height: 100%;
 }
 
+/* 手機：工具按鈕多嘅頁面 (記錄頁)，導航分兩行 */
+@media (max-width: 480px) {
+    .top-nav.has-tools { flex-wrap: wrap; gap: 8px; }
+    .top-nav.has-tools h1 { order: 2; flex: 1 1 auto; font-size: 20px; text-align: center; min-width: 0; }
+    .top-nav.has-tools .nav-btn { order: 3; flex: 1 1 45%; text-align: center; padding: 12px 8px; font-size: 16px; }
+    .top-nav.has-tools .nav-btn:first-child { order: 1; flex: 0 0 auto; padding: 12px 14px; }
+}
+
 @media (max-width: 480px) {
     .stat-cards { gap: 8px; }
     .stat-card { padding: 10px 6px; }
