@@ -117,11 +117,9 @@
                        class="cal-cell <%= dayStatus(day) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %> <%= day === selectedDay ? 'selected' : '' %>">
                         <span class="cal-daynum"><%= day %></span>
                         <% if (dayMap[day]) { %>
-                            <span class="cal-readings">
-                                <% var showP = dayMap[day]['早'] ? '早' : '晚';
-                                   if (dayMap[day][showP]) { %>
-                                    <span class="cal-reading <%= showP === '早' ? 'period-am' : 'period-pm' %>"><%= showP %> <%= dayMap[day][showP].high_pressure %>/<%= dayMap[day][showP].low_pressure %></span>
-                                <% } %>
+                            <span class="cal-periods">
+                                <span class="period-dot <%= dayMap[day]['早'] ? 'has' : '' %>">早</span>
+                                <span class="period-dot <%= dayMap[day]['晚'] ? 'has' : '' %>">晚</span>
                             </span>
                         <% } %>
                     </a>

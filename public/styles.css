@@ -495,24 +495,24 @@ body {
     font-weight: 600;
 }
 
-.cal-reading {
-    display: inline-block;
-    padding: 1px 4px;
-    border-radius: 4px;
+.cal-periods {
+    display: flex;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.period-dot {
+    font-size: 10px;
     font-weight: 700;
-    color: #333;
-    font-size: 11px;
-    max-width: 100%;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #e0e0e0;
+    color: #999;
 }
 
-.cal-reading.period-am {
-    background: #fff8e1;
-    color: #795548;
-}
-
-.cal-reading.period-pm {
-    background: #f3e5f5;
-    color: #6a1b9a;
+.period-dot.has {
+    background: #2d6a4f;
+    color: #fff;
 }
 
 /* --- 當日詳細 --- */
