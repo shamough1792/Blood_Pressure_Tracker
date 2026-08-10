@@ -1086,3 +1086,86 @@ body {
     .admin-card { padding: 16px; }
     .form-inline .form-group { min-width: 100%; }
 }
+
+/* --- 統計頁 --- */
+.range-nav {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 16px 0;
+}
+
+.range-btn {
+    padding: 10px 18px;
+    border-radius: 20px;
+    border: 2px solid #d0d7de;
+    background: #fff;
+    color: #1a1a2e;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.range-btn.selected {
+    background: #2d6a4f;
+    border-color: #2d6a4f;
+    color: #fff;
+}
+
+.stat-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.stat-value {
+    display: inline-block;
+    min-width: 56px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.stat-total {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin: 8px 0 16px;
+}
+
+.chart-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+}
+
+.chart-card h3 {
+    font-size: 20px;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+}
+
+.chart-card canvas {
+    height: 260px;
+    width: 100%;
+}

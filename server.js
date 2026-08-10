@@ -60,6 +60,61 @@ app.get('/admin', (req, res) => {
     });
 });
 
+// SQL 匯出（備份）
+app.get('/admin/export/sql', (req, res) => {
+    db.query('SELECT * FROM users ORDER BY id ASC', (err, users) => {
+        if (err) return res.status(500).send('匯出失敗：' + err.message);
+
+        let sql = '';
+        sql += '-- 血壓記錄系統備份\n';
+        sql += `-- 匯出時間：${new Date().toLocaleString('zh-HK')}\n\n`;
+        sql += 'CREATE TABLE IF NOT EXISTS `users` (\n';
+        sql += '  `id` int NOT NULL AUTO_INCREMENT,\n';
+        sql += '  `name` varchar(50) NOT NULL,\n';
+        sql += '  `color` varchar(7) NOT NULL DEFAULT \'#4CAF50\',\n';
+        sql += '  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,\n';
+        sql += '  PRIMARY KEY (`id`)\n';
+        sql += ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n';
+
+        if (users.length) {
+            sql += 'INSERT INTO `users` (`id`, `name`, `color`) VALUES\n';
+            sql += users.map(u =>
+                `(${u.id}, '${String(u.name).replace(/'/g, "''")}', '${u.color}')`
+            ).join(',\n');
+            sql += ';\n\n';
+        }
+
+        sql += 'CREATE TABLE IF NOT EXISTS `records` (\n';
+        sql += '  `id` int NOT NULL AUTO_INCREMENT,\n';
+        sql += '  `high_pressure` int NOT NULL,\n';
+        sql += '  `low_pressure` int NOT NULL,\n';
+        sql += '  `heartbeat` int NOT NULL,\n';
+        sql += '  `recorded_at` timestamp DEFAULT CURRENT_TIMESTAMP,\n';
+        sql += '  `user_id` int NOT NULL DEFAULT 1,\n';
+        sql += '  PRIMARY KEY (`id`)\n';
+        sql += ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n';
+
+        db.query('SELECT * FROM records ORDER BY id ASC', (err2, records) => {
+            if (err2) return res.status(500).send('匯出失敗：' + err2.message);
+
+            if (records.length) {
+                sql += 'INSERT INTO `records` (`id`, `high_pressure`, `low_pressure`, `heartbeat`, `recorded_at`, `user_id`) VALUES\n';
+                sql += records.map(r => {
+                    const ts = new Date(r.recorded_at);
+                    const tsStr = `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, '0')}-${String(ts.getDate()).padStart(2, '0')} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}:${String(ts.getSeconds()).padStart(2, '0')}`;
+                    return `(${r.id}, ${r.high_pressure}, ${r.low_pressure}, ${r.heartbeat}, '${tsStr}', ${r.user_id})`;
+                }).join(',\n');
+                sql += ';\n';
+            }
+
+            const filename = `血壓記錄備份_${formatDateForFilename(new Date())}.sql`;
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+            res.send(sql);
+        });
+    });
+});
+
 // API: 取得使用者列表
 app.get('/api/users', (req, res) => {
     db.query('SELECT * FROM users ORDER BY id ASC', (err, results) => {
@@ -215,6 +270,57 @@ app.get('/records', (req, res) => {
         }
 
         res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '', userId, userName, selectedDay });
+    });
+});
+
+// 統計頁：趨勢圖 + 每月摘要
+app.get('/stats', (req, res) => {
+    const userId = req.query.userId || 1;
+    const range = parseInt(req.query.range) || 6;
+    const userName = req.query.name || '';
+
+    db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], (err, results) => {
+        if (err) throw err;
+
+        const now = new Date();
+        const cutoff = new Date(now.getFullYear(), now.getMonth() - (range - 1), 1);
+
+        const filtered = results.filter(r => new Date(r.recorded_at) >= cutoff);
+
+        // 摘要統計
+        const stats = {
+            total: filtered.length,
+            avgHigh: 0, avgLow: 0, avgHeart: 0,
+            highCount: 0, lowCount: 0, normalCount: 0
+        };
+        filtered.forEach(r => {
+            stats.avgHigh += r.high_pressure;
+            stats.avgLow += r.low_pressure;
+            stats.avgHeart += r.heartbeat;
+            if (r.high_pressure >= 140 || r.low_pressure >= 90) stats.highCount++;
+            else if (r.high_pressure < 90 || r.low_pressure < 60) stats.lowCount++;
+            else stats.normalCount++;
+        });
+        if (stats.total > 0) {
+            stats.avgHigh = Math.round(stats.avgHigh / stats.total);
+            stats.avgLow = Math.round(stats.avgLow / stats.total);
+            stats.avgHeart = Math.round(stats.avgHeart / stats.total);
+        }
+        stats.normalRate = stats.total > 0 ? Math.round(stats.normalCount / stats.total * 100) : 0;
+
+        // 圖表資料：每條記錄一個點（標籤用 M/D）
+        const chartData = filtered.map(r => {
+            const d = new Date(r.recorded_at);
+            return {
+                label: `${d.getMonth() + 1}/${d.getDate()}`,
+                high: r.high_pressure, low: r.low_pressure, heart: r.heartbeat
+            };
+        });
+
+        res.render('stats', {
+            stats, chartData, range, userId, userName,
+            titleSuffix: process.env.TITLE_SUFFIX || ''
+        });
     });
 });
 
