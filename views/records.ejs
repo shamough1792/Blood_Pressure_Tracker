@@ -118,9 +118,10 @@
                         <span class="cal-daynum"><%= day %></span>
                         <% if (dayMap[day]) { %>
                             <span class="cal-readings">
-                                <% ['早', '晚'].forEach(function(p) { if (dayMap[day][p]) { %>
-                                    <span class="cal-reading <%= p === '早' ? 'period-am' : 'period-pm' %>"><%= p %> <%= dayMap[day][p].high_pressure %>/<%= dayMap[day][p].low_pressure %></span>
-                                <% } }); %>
+                                <% var showP = dayMap[day]['早'] ? '早' : '晚';
+                                   if (dayMap[day][showP]) { %>
+                                    <span class="cal-reading <%= showP === '早' ? 'period-am' : 'period-pm' %>"><%= showP %> <%= dayMap[day][showP].high_pressure %>/<%= dayMap[day][showP].low_pressure %></span>
+                                <% } %>
                             </span>
                         <% } %>
                     </a>
