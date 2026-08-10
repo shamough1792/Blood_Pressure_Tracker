@@ -21,15 +21,14 @@
 
         <%
             var userId = typeof userId !== 'undefined' ? userId : 1;
-            // 取得所有月份並排序
             var months = Object.keys(groupedRecords).sort();
             var currentIdx = months.indexOf(selectedMonth);
             if (currentIdx === -1) currentIdx = months.length - 1;
             var currentMonth = months.length > 0 ? months[currentIdx] : null;
             var prevMonth = currentIdx > 0 ? months[currentIdx - 1] : null;
             var nextMonth = currentIdx < months.length - 1 ? months[currentIdx + 1] : null;
+            var selectedDay = typeof selectedDay !== 'undefined' && selectedDay ? selectedDay : null;
 
-            // 格式化月份顯示
             function formatMonth(ym) {
                 return ym ? ym.replace('-', '年') + '月' : '';
             }
@@ -62,43 +61,94 @@
                 </span>
             <% } %>
         </div>
-        <% } %>
 
-        <!-- 記錄卡片列表 -->
-        <% if (groupedRecords[currentMonth] && groupedRecords[currentMonth].length) { %>
-            <% groupedRecords[currentMonth].forEach(function(record) {
+        <%
+            // Build day map: day -> {早: record, 晚: record}
+            var dayMap = {};
+            (groupedRecords[currentMonth] || []).forEach(function(r) {
+                var d = new Date(r.recorded_at);
+                var day = d.getDate();
+                var period = d.getHours() < 12 ? '早' : '晚';
+                if (!dayMap[day]) dayMap[day] = {};
+                dayMap[day][period] = r;
+            });
+
+            var ymParts = currentMonth.split('-');
+            var year = parseInt(ymParts[0]);
+            var month = parseInt(ymParts[1]);
+            var firstWeekday = new Date(year, month - 1, 1).getDay();
+            var daysInMonth = new Date(year, month, 0).getDate();
+            var weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
+
+            function dayStatus(day) {
+                var d = dayMap[day];
+                if (!d) return '';
+                var worst = 0;
+                ['早', '晚'].forEach(function(p) {
+                    if (d[p]) {
+                        var hp = parseInt(d[p].high_pressure);
+                        var lp = parseInt(d[p].low_pressure);
+                        var s = (hp >= 140 || lp >= 90) ? 2 : ((hp < 90 || lp < 60) ? 1 : 0);
+                        if (s > worst) worst = s;
+                    }
+                });
+                return worst === 2 ? 'high' : (worst === 1 ? 'low' : 'normal');
+            }
+
+            function bpClass(record) {
                 var hp = parseInt(record.high_pressure);
                 var lp = parseInt(record.low_pressure);
-                var borderClass = '';
-                if (hp >= 140 || lp >= 90) {
-                    borderClass = 'bp-high-border';
-                } else if (hp < 90 || lp < 60) {
-                    borderClass = 'bp-low-border';
-                } else {
-                    borderClass = 'bp-normal-border';
-                }
+                if (hp >= 140 || lp >= 90) return 'bp-high-border';
+                if (hp < 90 || lp < 60) return 'bp-low-border';
+                return 'bp-normal-border';
+            }
+        %>
+
+        <!-- 月曆 -->
+        <div class="calendar">
+            <div class="cal-weekdays">
+                <% weekdayNames.forEach(function(w) { %><span class="cal-wd"><%= w %></span><% }); %>
+            </div>
+            <div class="cal-grid">
+                <% for (var i = 0; i < firstWeekday; i++) { %><span class="cal-blank"></span><% } %>
+                <% for (var day = 1; day <= daysInMonth; day++) { %>
+                    <a href="/records?yearMonth=<%= currentMonth %>&day=<%= day %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>"
+                       class="cal-cell <%= dayStatus(day) %> <%= day === selectedDay ? 'selected' : '' %>">
+                        <span class="cal-daynum"><%= day %></span>
+                        <% if (dayMap[day]) { %>
+                            <span class="cal-readings">
+                                <% if (dayMap[day]['早']) { %><span>早 <%= dayMap[day]['早'].high_pressure %>/<%= dayMap[day]['早'].low_pressure %></span><% } %>
+                                <% if (dayMap[day]['晚']) { %><span>晚 <%= dayMap[day]['晚'].high_pressure %>/<%= dayMap[day]['晚'].low_pressure %></span><% } %>
+                            </span>
+                        <% } %>
+                    </a>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 所選日期的詳細 -->
+        <% if (selectedDay && dayMap[selectedDay]) { %>
+        <div class="day-detail">
+            <h3><%= year %>年<%= month %>月<%= selectedDay %>日 (<%= weekdayNames[new Date(year, month - 1, selectedDay).getDay()] %>)</h3>
+            <% ['早', '晚'].forEach(function(p) { if (dayMap[selectedDay][p]) {
+                var r = dayMap[selectedDay][p];
+                var hp = parseInt(r.high_pressure);
+                var lp = parseInt(r.low_pressure);
+                var statusText = '';
+                var statusClass = '';
+                if (hp >= 140 || lp >= 90) { statusClass = 'bp-high'; statusText = '高血壓'; }
+                else if (hp < 90 || lp < 60) { statusClass = 'bp-low'; statusText = '低血壓'; }
+                else { statusClass = 'bp-normal'; statusText = '正常'; }
             %>
-                <div class="record-card <%= borderClass %>">
-                    <div class="card-header">
-                        <span><%= record.formattedDate %></span>
-                    </div>
-                    <div class="card-body">
-                        <div class="card-metric">
-                            <span class="metric-value"><%= record.high_pressure %></span>
-                            <span class="metric-label">高壓</span>
-                        </div>
-                        <div class="card-metric">
-                            <span class="metric-value"><%= record.low_pressure %></span>
-                            <span class="metric-label">低壓</span>
-                        </div>
-                        <div class="card-metric">
-                            <span class="metric-value"><%= record.heartbeat %></span>
-                            <span class="metric-label">心跳</span>
-                        </div>
+                <div class="day-record <%= bpClass(r) %>">
+                    <div class="day-record-head">
+                        <span class="day-period"><%= p %></span>
+                        <span class="day-values">高壓 <b><%= r.high_pressure %></b>　低壓 <b><%= r.low_pressure %></b>　心跳 <b><%= r.heartbeat %></b></span>
+                        <span class="bp-status <%= statusClass %>" style="font-size:14px;padding:4px 12px;"><%= statusText %></span>
                     </div>
                     <div class="card-actions">
-                        <a href="/modify/<%= record.id %>?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="btn btn-secondary">修改</a>
-                        <form action="/delete/<%= record.id %>" method="POST" style="display:inline;"
+                        <a href="/modify/<%= r.id %>?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="btn btn-secondary">修改</a>
+                        <form action="/delete/<%= r.id %>" method="POST" style="display:inline;"
                               onsubmit="return confirm('確定要刪除這條記錄嗎？');">
                             <input type="hidden" name="userId" value="<%= userId %>">
                             <input type="hidden" name="name" value="<%= typeof userName !== 'undefined' ? userName : '' %>">
@@ -106,11 +156,13 @@
                         </form>
                     </div>
                 </div>
-            <% }); %>
+            <% } }); %>
+        </div>
+        <% } else if (selectedDay) { %>
+            <div class="empty-state">該日沒有記錄</div>
+        <% } %>
         <% } else { %>
-            <div class="empty-state">
-                沒有記錄
-            </div>
+            <div class="empty-state">沒有記錄</div>
         <% } %>
     </div>
     <script>

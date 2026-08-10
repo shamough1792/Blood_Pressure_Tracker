@@ -401,6 +401,138 @@ body {
     box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.15);
 }
 
+/* --- 月曆視圖 --- */
+.calendar {
+    background: #fff;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 6px;
+}
+
+.cal-wd {
+    font-size: 14px;
+    font-weight: 700;
+    color: #999;
+    padding: 4px 0;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.cal-blank {
+    min-height: 40px;
+}
+
+.cal-cell {
+    min-height: 40px;
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-decoration: none;
+    background: #f7f9fc;
+    transition: transform 0.15s;
+}
+
+.cal-cell:active {
+    transform: scale(0.95);
+}
+
+.cal-cell.high {
+    background: #ffcdd2;
+}
+
+.cal-cell.low {
+    background: #b3e5fc;
+}
+
+.cal-cell.normal {
+    background: #c8e6c9;
+}
+
+.cal-cell.selected {
+    outline: 3px solid #2d6a4f;
+    outline-offset: -3px;
+}
+
+.cal-daynum {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.cal-readings {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 9px;
+    color: #333;
+    line-height: 1.2;
+}
+
+/* --- 當日詳細 --- */
+.day-detail {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.day-detail h3 {
+    font-size: 20px;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+}
+
+.day-record {
+    border-left: 5px solid #d0d7de;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: #fafbfc;
+}
+
+.day-record.bp-high-border { border-left-color: #f44336; }
+.day-record.bp-low-border { border-left-color: #42a5f5; }
+.day-record.bp-normal-border { border-left-color: #4caf50; }
+
+.day-record-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.day-period {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.day-values {
+    font-size: 16px;
+    color: #333;
+    flex: 1;
+}
+
+.day-values b {
+    font-size: 18px;
+}
+
 .record-card {
     background: #fff;
     border-radius: 16px;
