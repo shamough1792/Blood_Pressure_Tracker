@@ -309,13 +309,19 @@ app.get('/stats', (req, res) => {
         stats.normalRate = stats.total > 0 ? Math.round(stats.normalCount / stats.total * 100) : 0;
 
         // 圖表資料：每條記錄一個點（標籤用 M/D）
-        const chartData = filtered.map(r => {
+        let chartData = filtered.map(r => {
             const d = new Date(r.recorded_at);
             return {
                 label: `${d.getMonth() + 1}/${d.getDate()}`,
                 high: r.high_pressure, low: r.low_pressure, heart: r.heartbeat
             };
         });
+
+        // 點太多會睇唔清：超過 100 點時平均抽樣（保留最後一點）
+        if (chartData.length > 100) {
+            const stride = Math.ceil(chartData.length / 100);
+            chartData = chartData.filter((_, i) => i % stride === 0 || i === chartData.length - 1);
+        }
 
         res.render('stats', {
             stats, chartData, range, userId, userName,

@@ -69,10 +69,27 @@
             <div class="chart-wrap"><canvas id="heartChart"></canvas></div>
         </div>
 
+        <!-- 放大檢視 -->
+        <div id="zoomOverlay" class="zoom-overlay" onclick="if (event.target === this) closeZoom()">
+            <div class="zoom-box">
+                <button class="zoom-close" onclick="closeZoom()">✕</button>
+                <h3 id="zoomTitle"></h3>
+                <div class="zoom-wrap"><canvas id="zoomChart"></canvas></div>
+            </div>
+        </div>
+
         <script>
             var data = <%- JSON.stringify(chartData) %>;
+            var bpDatasets = [
+                { label: '高壓', data: data.map(function(d) { return d.high; }), borderColor: '#e53935', backgroundColor: 'rgba(229,57,53,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 },
+                { label: '低壓', data: data.map(function(d) { return d.low; }), borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
+            ];
+            var heartDatasets = [
+                { label: '心跳', data: data.map(function(d) { return d.heart; }), borderColor: '#f9a825', backgroundColor: 'rgba(249,168,37,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
+            ];
+
             function makeChart(id, datasets) {
-                new Chart(document.getElementById(id).getContext('2d'), {
+                return new Chart(document.getElementById(id).getContext('2d'), {
                     type: 'line',
                     data: { labels: data.map(function(d) { return d.label; }), datasets: datasets },
                     options: {
@@ -87,13 +104,23 @@
                     }
                 });
             }
-            makeChart('bpChart', [
-                { label: '高壓', data: data.map(function(d) { return d.high; }), borderColor: '#e53935', backgroundColor: 'rgba(229,57,53,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 },
-                { label: '低壓', data: data.map(function(d) { return d.low; }), borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
-            ]);
-            makeChart('heartChart', [
-                { label: '心跳', data: data.map(function(d) { return d.heart; }), borderColor: '#f9a825', backgroundColor: 'rgba(249,168,37,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
-            ]);
+
+            makeChart('bpChart', bpDatasets);
+            makeChart('heartChart', heartDatasets);
+
+            // 點擊圖表放大
+            var zoomChartInst = null;
+            function openZoom(title, datasets) {
+                document.getElementById('zoomTitle').textContent = title;
+                document.getElementById('zoomOverlay').style.display = 'flex';
+                zoomChartInst = makeChart('zoomChart', datasets);
+            }
+            function closeZoom() {
+                document.getElementById('zoomOverlay').style.display = 'none';
+                if (zoomChartInst) { zoomChartInst.destroy(); zoomChartInst = null; }
+            }
+            document.getElementById('bpChart').addEventListener('click', function() { openZoom('血壓趨勢', bpDatasets); });
+            document.getElementById('heartChart').addEventListener('click', function() { openZoom('心跳趨勢', heartDatasets); });
         </script>
         <% } else { %>
             <div class="empty-state">所選範圍內沒有記錄</div>
