@@ -501,13 +501,13 @@ body {
 }
 
 .cal-reading.period-am {
-    background: #fff3e0;
-    color: #e65100;
+    background: #fff8e1;
+    color: #795548;
 }
 
 .cal-reading.period-pm {
-    background: #ede7f6;
-    color: #4527a0;
+    background: #f3e5f5;
+    color: #6a1b9a;
 }
 
 /* --- 當日詳細 --- */
