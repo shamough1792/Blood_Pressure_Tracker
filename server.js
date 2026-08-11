@@ -469,13 +469,6 @@ app.get('/export/pdf', (req, res) => {
             ];
             const rowH = 26;
 
-            // 標題
-            doc.fontSize(20).fillColor('#1a1a2e').text('血壓記錄表' + (userName ? ' (' + userName + ')' : ''), { align: 'center' });
-            doc.fontSize(11).fillColor('#666').text('匯出日期：' + new Date().toLocaleDateString('zh-HK', { year: 'numeric', month: 'long', day: 'numeric' }), { align: 'center' });
-            doc.moveDown(1);
-
-            let y = doc.y;
-
             // 按月份分組
             const months = {};
             results.forEach(r => {
@@ -484,6 +477,27 @@ app.get('/export/pdf', (req, res) => {
                 if (!months[ym]) months[ym] = [];
                 months[ym].push(r);
             });
+
+            // 標題
+            doc.fontSize(20).fillColor('#1a1a2e').text('血壓記錄表' + (userName ? ' (' + userName + ')' : ''), { align: 'center' });
+            doc.fontSize(11).fillColor('#666').text('匯出日期：' + new Date().toLocaleDateString('zh-HK', { year: 'numeric', month: 'long', day: 'numeric' }), { align: 'center' });
+            doc.moveDown(1);
+
+            let y = doc.y;
+
+            // 第一頁目錄：點擊跳轉到對應月份
+            const monthKeys = Object.keys(months).sort((a, b) => a.localeCompare(b));
+            if (monthKeys.length > 1) {
+                doc.fontSize(15).fillColor('#1a1a2e').text('目錄', { align: 'center' });
+                y = doc.y + 14;
+                monthKeys.forEach(ym => {
+                    const label = `${ym.replace('-', '年')}月（${months[ym].length} 筆）`;
+                    doc.fontSize(12).fillColor('#2d6a4f').text(label, 50, y, { width: 350, underline: true });
+                    doc.annotate(50, y, 350, 20, { Subtype: 'Link', A: { S: 'GoTo', D: 'month-' + ym } });
+                    y += 24;
+                });
+                y = 40; // 月份由第二頁開始
+            }
 
             function drawHeaderRow() {
                 doc.fontSize(12).fillColor('#fff');
@@ -535,8 +549,9 @@ app.get('/export/pdf', (req, res) => {
                 y += rowH;
             }
 
-            Object.keys(months).sort((a, b) => a.localeCompare(b)).forEach((ym, mi) => {
-                if (mi > 0) { doc.addPage(); y = 40; } // 每個月開新一頁
+            monthKeys.forEach((ym, mi) => {
+                doc.addPage(); y = 40; // 每個月開新一頁（含第一個月，目錄之後）
+                doc.addNamedDestination('month-' + ym, { type: 'XYZ', x: 40, y: 800 });
                 drawMonthHeader(ym);
                 months[ym].forEach(drawRow);
             });
