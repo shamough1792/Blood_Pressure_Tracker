@@ -456,35 +456,7 @@ app.get('/export/pdf', (req, res) => {
             const filename = `血壓報告${userName ? '(' + userName + ')' : ''}_${formatDateForFilename(new Date())}.pdf`;
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
-
-            // pdfkit 3.x 將 destination 寫成 dictionary form（PDF 1.7 新格式），
-            // Adobe Acrobat 唔認，Chrome 認。生成後改做 array form 提升相容性
-            const chunks = [];
-            doc.on('data', c => chunks.push(c));
-            doc.on('end', () => {
-                let buf = Buffer.concat(chunks).toString('latin1');
-                // 注意：所有替換都必須保持原 byte 長度（空白填充），
-                // 否則 xref 偏移失效，Acrobat 會話檔案損壞
-                buf = buf.replace(/\[(\d+ 0 R) <<\n\/type \/XYZ\n\/x (\d+)\n\/y (\d+)\n>>\]/g, (m, ref, x, y) => {
-                    const rep = `[${ref} /XYZ ${x} ${y} null]`;
-                    return rep + ' '.repeat(Math.max(0, m.length - rep.length));
-                });
-                // Acrobat 需要 root /Dests 係 flat dict（/name [dest]），
-                // pdfkit 寫 /Limits + /Names tree 格式，Acrobat 唔識
-                // 用 lazy match：只到第一個 '] >>'（Dests dict 結尾），
-                // greedy 會食到 pages tree 嘅 /Kids [...] >>，破壞成個檔案
-                buf = buf.replace(/\/Dests <<\s*\/Limits \[[^\]]*\]\s*\/Names \[(.*?)\]\s*>>/s, (m, inner) => {
-                    const pairs = [];
-                    const re = /\(([^)]+)\) \[(\d+ 0 R) (\/XYZ [\d.]+ [\d.]+ null)\]/g;
-                    let pm;
-                    while ((pm = re.exec(inner))) {
-                        pairs.push('/' + pm[1] + ' [' + pm[2] + ' ' + pm[3] + ']');
-                    }
-                    const rep = '/Dests << ' + pairs.join(' ') + ' >>';
-                    return rep + ' '.repeat(Math.max(0, m.length - rep.length));
-                });
-                res.send(Buffer.from(buf, 'latin1'));
-            });
+            doc.pipe(res);
 
             const pageW = 595, usableW = 515; // A4 - 40*2 margins
             const cols = [
@@ -581,7 +553,8 @@ app.get('/export/pdf', (req, res) => {
 
             monthKeys.forEach((ym, mi) => {
                 doc.addPage(); y = 40; // 每個月開新一頁（含第一個月，目錄之後）
-                doc.addNamedDestination('month-' + ym, { type: 'XYZ', x: 40, y: 800 });
+                // 位置參數 API：寫出 array form [pageRef /XYZ x y null]，Acrobat 相容
+                doc.addNamedDestination('month-' + ym, 'XYZ', 40, 800, null);
                 drawMonthHeader(ym);
                 months[ym].forEach(drawRow);
             });
