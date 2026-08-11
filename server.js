@@ -456,7 +456,16 @@ app.get('/export/pdf', (req, res) => {
             const filename = `血壓報告${userName ? '(' + userName + ')' : ''}_${formatDateForFilename(new Date())}.pdf`;
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
-            doc.pipe(res);
+
+            // pdfkit 3.x 將 destination 寫成 dictionary form（PDF 1.7 新格式），
+            // Adobe Acrobat 唔認，Chrome 認。生成後改做 array form 提升相容性
+            const chunks = [];
+            doc.on('data', c => chunks.push(c));
+            doc.on('end', () => {
+                let buf = Buffer.concat(chunks).toString('latin1');
+                buf = buf.replace(/\[(\d+ 0 R) <<\n\/type \/XYZ\n\/x (\d+)\n\/y (\d+)\n>>\]/g, '[$1 /XYZ $2 $3 null]');
+                res.send(Buffer.from(buf, 'latin1'));
+            });
 
             const pageW = 595, usableW = 515; // A4 - 40*2 margins
             const cols = [
