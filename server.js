@@ -449,6 +449,9 @@ app.get('/export/pdf', (req, res) => {
 
             const PDFDocument = require('pdfkit');
             const doc = new PDFDocument({ size: 'A4', margin: 40 });
+            // 中文需內嵌 CJK 字型（預設 Helvetica 冇中文字）
+            doc.registerFont('NotoTC', path.join(__dirname, 'fonts', 'NotoSansTC-Regular.ttf'));
+            doc.font('NotoTC');
 
             const filename = `血壓報告${userName ? '(' + userName + ')' : ''}_${formatDateForFilename(new Date())}.pdf`;
             res.setHeader('Content-Type', 'application/pdf');
