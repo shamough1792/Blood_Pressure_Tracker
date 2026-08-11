@@ -485,16 +485,18 @@ app.get('/export/pdf', (req, res) => {
 
             let y = doc.y;
 
-            // 第一頁目錄：點擊跳轉到對應月份
+            // 第一頁目錄：圓角卡片，點擊跳轉到對應月份
             const monthKeys = Object.keys(months).sort((a, b) => a.localeCompare(b));
             if (monthKeys.length > 1) {
-                doc.fontSize(15).fillColor('#1a1a2e').text('目錄', { align: 'center' });
+                doc.fontSize(16).fillColor('#1a1a2e').text('目錄', { align: 'center' });
                 y = doc.y + 14;
+                const boxW = 340, boxH = 28;
                 monthKeys.forEach(ym => {
-                    const label = `${ym.replace('-', '年')}月（${months[ym].length} 筆）`;
-                    doc.fontSize(12).fillColor('#2d6a4f').text(label, 50, y, { width: 350, underline: true });
-                    doc.annotate(50, y, 350, 20, { Subtype: 'Link', A: { S: 'GoTo', D: 'month-' + ym } });
-                    y += 24;
+                    const boxX = (595 - boxW) / 2;
+                    doc.roundedRect(boxX, y, boxW, boxH, 8).fill('#E8F5E9');
+                    doc.fillColor('#1b5e20').fontSize(13).text(`${ym.replace('-', '年')}月`, boxX, y + 7, { width: boxW, align: 'center' });
+                    doc.annotate(boxX, y, boxW, boxH, { Subtype: 'Link', A: { S: 'GoTo', D: 'month-' + ym } });
+                    y += boxH + 6;
                 });
                 y = 40; // 月份由第二頁開始
             }
