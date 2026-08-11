@@ -276,7 +276,7 @@ app.get('/records', (req, res) => {
 // 統計頁：趨勢圖 + 每月摘要
 app.get('/stats', (req, res) => {
     const userId = req.query.userId || 1;
-    const range = parseInt(req.query.range) || 6;
+    const range = req.query.range === '0' ? 0 : (parseInt(req.query.range) || 6);
     const userName = req.query.name || '';
 
     db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], (err, results) => {
