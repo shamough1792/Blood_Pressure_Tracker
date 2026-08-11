@@ -497,9 +497,17 @@ app.get('/export/pdf', (req, res) => {
             }
 
             function statusOf(r) {
-                if (r.high_pressure >= 140 || r.low_pressure >= 90) return { text: '高血壓', fill: 'FFCDD2', color: '#b71c1c' };
-                if (r.high_pressure < 90 || r.low_pressure < 60) return { text: '低血壓', fill: 'B3E5FC', color: '#0d47a1' };
-                return { text: '正常', fill: 'C8E6C9', color: '#1b5e20' };
+                // 淺色底提升文字對比度
+                if (r.high_pressure >= 140 || r.low_pressure >= 90) return { text: '高血壓', fill: 'FFEBEE', color: '#c62828' };
+                if (r.high_pressure < 90 || r.low_pressure < 60) return { text: '低血壓', fill: 'E1F5FE', color: '#0d47a1' };
+                return { text: '正常', fill: 'E8F5E9', color: '#1b5e20' };
+            }
+
+            // 每月新一頁：月份標題 + 表頭
+            function drawMonthHeader(ym) {
+                doc.fontSize(14).fillColor('#1a1a2e').text(`${ym.replace('-', '年')}月`, 40, y);
+                y += 28;
+                drawHeaderRow();
             }
 
             function drawRow(r) {
@@ -524,13 +532,10 @@ app.get('/export/pdf', (req, res) => {
                 y += rowH;
             }
 
-            Object.keys(months).sort((a, b) => a.localeCompare(b)).forEach(ym => {
-                if (y + 60 > 800) { doc.addPage(); y = 40; }
-                doc.fontSize(14).fillColor('#1a1a2e').text(`${ym.replace('-', '年')}月`, 40, y);
-                y += 28;
-                drawHeaderRow();
+            Object.keys(months).sort((a, b) => a.localeCompare(b)).forEach((ym, mi) => {
+                if (mi > 0) { doc.addPage(); y = 40; } // 每個月開新一頁
+                drawMonthHeader(ym);
                 months[ym].forEach(drawRow);
-                y += 10;
             });
 
             doc.end();
