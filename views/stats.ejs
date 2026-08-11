@@ -14,7 +14,7 @@
 <body>
     <div class="container">
         <div class="top-nav">
-            <a href="/records?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="nav-btn">← 返回</a>
+            <a href="/records?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="nav-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回</a>
             <h1>統計<%= typeof userName !== 'undefined' && userName ? ' (' + userName + ')' : '' %></h1>
             <span style="width:60px;"></span>
         </div>
@@ -72,7 +72,7 @@
         <!-- 放大檢視 -->
         <div id="zoomOverlay" class="zoom-overlay" onclick="if (event.target === this) closeZoom()">
             <div class="zoom-box">
-                <button class="zoom-close" onclick="closeZoom()">✕</button>
+                <button class="zoom-close" onclick="closeZoom()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                 <h3 id="zoomTitle"></h3>
                 <div class="zoom-wrap"><canvas id="zoomChart"></canvas></div>
             </div>

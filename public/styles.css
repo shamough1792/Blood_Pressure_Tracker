@@ -79,6 +79,22 @@ body {
     box-shadow: 0 5px 14px rgba(45, 106, 79, 0.4);
 }
 
+/* --- 內聯圖示 (Feather-style SVG) --- */
+.icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: -3px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.icon-lg {
+    width: 24px;
+    height: 24px;
+    vertical-align: -5px;
+    display: inline-block;
+}
+
 /* --- 進度條 --- */
 .progress-container {
     text-align: center;
@@ -360,8 +376,13 @@ body {
 }
 
 .success-icon {
-    font-size: 72px;
     margin-bottom: 16px;
+    color: #2e7d32;
+}
+
+.success-icon .icon-lg {
+    width: 72px;
+    height: 72px;
 }
 
 .success-title {

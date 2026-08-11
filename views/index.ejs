@@ -14,7 +14,7 @@
     <div class="container">
         <!-- 頂部導航 -->
         <div class="top-nav">
-            <a href="/" class="nav-btn">← 返回</a>
+            <a href="/" class="nav-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回</a>
             <h1>血壓記錄<%= typeof userName !== 'undefined' && userName ? ' (' + userName + ')' : '' %></h1>
             <div style="display:flex;gap:4px;">
                 <a href="/records?userId=<%= typeof userId !== 'undefined' ? userId : '' %>&name=<%= typeof userName !== 'undefined' ? encodeURIComponent(userName) : '' %>" class="nav-btn">記錄</a>
@@ -44,35 +44,35 @@
                 <input type="number" class="step-input" id="highPressure" name="high_pressure"
                        placeholder="___" inputmode="numeric" min="50" max="250" autofocus>
                 <div class="step-actions">
-                    <button type="button" class="btn btn-primary" onclick="goStep(2)">下一步 →</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(2)">下一步 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
                 </div>
             </div>
 
             <!-- 步驟 2: 低壓 -->
             <div class="step" id="step-2">
-                <button type="button" class="back-link" onclick="goStep(1)">← 上一步</button>
+                <button type="button" class="back-link" onclick="goStep(1)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
                 <div class="step-title">低壓是多少？</div>
                 <input type="number" class="step-input" id="lowPressure" name="low_pressure"
                        placeholder="___" inputmode="numeric" min="30" max="150">
                 <div class="step-actions">
-                    <button type="button" class="btn btn-primary" onclick="goStep(3)">下一步 →</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(3)">下一步 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
                 </div>
             </div>
 
             <!-- 步驟 3: 心跳 -->
             <div class="step" id="step-3">
-                <button type="button" class="back-link" onclick="goStep(2)">← 上一步</button>
+                <button type="button" class="back-link" onclick="goStep(2)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
                 <div class="step-title">心跳是多少？</div>
                 <input type="number" class="step-input" id="heartbeat" name="heartbeat"
                        placeholder="___" inputmode="numeric" min="30" max="200">
                 <div class="step-actions">
-                    <button type="button" class="btn btn-primary" onclick="goStep(4)">下一步 →</button>
+                    <button type="button" class="btn btn-primary" onclick="goStep(4)">下一步 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
                 </div>
             </div>
 
             <!-- 步驟 4: 確認 -->
             <div class="step" id="step-4">
-                <button type="button" class="back-link" onclick="goStep(3)">← 上一步</button>
+                <button type="button" class="back-link" onclick="goStep(3)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
                 <div class="step-title">請確認資料</div>
 
                 <div class="confirm-card">
@@ -100,7 +100,7 @@
 
                 <div id="bpStatus"></div>
 
-                <button type="button" class="btn-link" onclick="toggleDateTimeEditor()">📅 修改日期或時間</button>
+                <button type="button" class="btn-link" onclick="toggleDateTimeEditor()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 修改日期或時間</button>
 
                 <div class="datetime-editor" id="dateTimeEditor">
                     <label for="editDate">日期</label>
@@ -113,14 +113,14 @@
                 </div>
 
                 <div class="step-actions">
-                    <button type="submit" class="btn btn-primary">✓ 確認儲存</button>
+                    <button type="submit" class="btn btn-primary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 確認儲存</button>
                 </div>
             </div>
         </form>
 
         <!-- 成功畫面（隱藏，提交後才顯示） -->
         <div class="success-screen" id="successScreen">
-            <div class="success-icon">✓</div>
+            <div class="success-icon"><svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="success-title">記錄已儲存！</div>
             <div class="success-sub">3 秒後可繼續輸入</div>
             <button class="btn btn-primary" onclick="resetForm()">再記一筆</button>
