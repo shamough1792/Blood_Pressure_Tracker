@@ -498,8 +498,9 @@ app.get('/export/pdf', (req, res) => {
 
             function statusOf(r) {
                 // 只有異常行先有鮮明底色；正常行冇底色，易讀
-                if (r.high_pressure >= 140 || r.low_pressure >= 90) return { text: '高血壓', fill: 'FFCDD2', color: '#b71c1c' };
-                if (r.high_pressure < 90 || r.low_pressure < 60) return { text: '低血壓', fill: 'B3E5FC', color: '#0d47a1' };
+                // 注意：pdfkit fill() 要帶 '#' 前綴，否則 fallback 黑色
+                if (r.high_pressure >= 140 || r.low_pressure >= 90) return { text: '高血壓', fill: '#FFCDD2', color: '#b71c1c' };
+                if (r.high_pressure < 90 || r.low_pressure < 60) return { text: '低血壓', fill: '#B3E5FC', color: '#0d47a1' };
                 return { text: '正常', fill: null, color: '#1a1a2e' };
             }
 
