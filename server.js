@@ -283,7 +283,9 @@ app.get('/stats', (req, res) => {
         if (err) throw err;
 
         const now = new Date();
-        const cutoff = new Date(now.getFullYear(), now.getMonth() - (range - 1), 1);
+        const cutoff = range === 0
+            ? new Date(0) // 全部：唔限時
+            : new Date(now.getFullYear(), now.getMonth() - (range - 1), 1);
 
         const filtered = results.filter(r => new Date(r.recorded_at) >= cutoff);
 
