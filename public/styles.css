@@ -1172,6 +1172,60 @@ body {
     .form-inline .form-group { min-width: 100%; }
 }
 
+/* --- 匯出選擇頁 --- */
+.export-hint {
+    text-align: center;
+    font-size: 18px;
+    color: #666;
+    margin: 12px 0 24px;
+}
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.export-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 20px;
+    border-radius: 18px;
+    text-decoration: none;
+    text-align: center;
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.export-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.export-excel {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    color: #2d6a4f;
+    box-shadow: 0 4px 14px rgba(45, 106, 79, 0.2);
+}
+
+.export-pdf {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    color: #c62828;
+    box-shadow: 0 4px 14px rgba(198, 40, 40, 0.2);
+}
+
+.export-name {
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.export-desc {
+    font-size: 15px;
+    color: inherit;
+    opacity: 0.85;
+}
+
 /* --- 統計頁 --- */
 .range-nav {
     display: flex;

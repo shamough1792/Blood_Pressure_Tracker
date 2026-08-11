@@ -423,6 +423,118 @@ function formatDateForFilename(date) {
     return `${year}年${month}月${day}日_${hours}時${minutes}分`;
 }
 
+// 匯出選擇頁（Excel / PDF）
+app.get('/export', (req, res) => {
+    const userId = req.query.userId || 1;
+    const userName = req.query.name || '';
+    res.render('export', { userId, userName, titleSuffix: process.env.TITLE_SUFFIX || '' });
+});
+
+// Export to PDF
+app.get('/export/pdf', (req, res) => {
+    const userId = req.query.userId || 1;
+    db.query('SELECT name FROM users WHERE id = ?', [userId], (err2, users) => {
+        const userName = users && users.length ? users[0].name : '';
+        db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], (err, results) => {
+            if (err) throw err;
+
+            if (results.length === 0) {
+                return res.send(`
+                    <script>
+                        alert('沒有記錄可供匯出');
+                        window.history.back();
+                    </script>
+                `);
+            }
+
+            const PDFDocument = require('pdfkit');
+            const doc = new PDFDocument({ size: 'A4', margin: 40 });
+
+            const filename = `血壓報告${userName ? '(' + userName + ')' : ''}_${formatDateForFilename(new Date())}.pdf`;
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+            doc.pipe(res);
+
+            const pageW = 595, usableW = 515; // A4 - 40*2 margins
+            const cols = [
+                { x: 0, w: 75,  label: '日期' },
+                { x: 75, w: 55, label: '時段' },
+                { x: 130, w: 65, label: '高壓' },
+                { x: 195, w: 65, label: '低壓' },
+                { x: 260, w: 55, label: '心跳' },
+                { x: 315, w: 200, label: '狀態' }
+            ];
+            const rowH = 26;
+
+            // 標題
+            doc.fontSize(20).fillColor('#1a1a2e').text('血壓記錄表' + (userName ? ' (' + userName + ')' : ''), { align: 'center' });
+            doc.fontSize(11).fillColor('#666').text('匯出日期：' + new Date().toLocaleDateString('zh-HK', { year: 'numeric', month: 'long', day: 'numeric' }), { align: 'center' });
+            doc.moveDown(1);
+
+            let y = doc.y;
+
+            // 按月份分組
+            const months = {};
+            results.forEach(r => {
+                const d = new Date(r.recorded_at);
+                const ym = `${d.getFullYear()}-${d.getMonth() + 1}`;
+                if (!months[ym]) months[ym] = [];
+                months[ym].push(r);
+            });
+
+            function drawHeaderRow() {
+                doc.fontSize(12).fillColor('#fff');
+                cols.forEach(c => {
+                    doc.rect(40 + c.x, y, c.w, rowH).fill('#2d6a4f');
+                });
+                cols.forEach(c => {
+                    doc.fillColor('#fff').text(c.label, 40 + c.x + 6, y + 7, { width: c.w - 12 });
+                });
+                y += rowH;
+            }
+
+            function statusOf(r) {
+                if (r.high_pressure >= 140 || r.low_pressure >= 90) return { text: '高血壓', fill: 'FFCDD2', color: '#b71c1c' };
+                if (r.high_pressure < 90 || r.low_pressure < 60) return { text: '低血壓', fill: 'B3E5FC', color: '#0d47a1' };
+                return { text: '正常', fill: 'C8E6C9', color: '#1b5e20' };
+            }
+
+            function drawRow(r) {
+                if (y + rowH > 800) { doc.addPage(); y = 40; drawHeaderRow(); }
+                const d = new Date(r.recorded_at);
+                const st = statusOf(r);
+                const cells = [
+                    `${d.getMonth() + 1}月${d.getDate()}日`,
+                    d.getHours() < 12 ? '早' : '晚',
+                    String(r.high_pressure),
+                    String(r.low_pressure),
+                    String(r.heartbeat),
+                    st.text
+                ];
+                cols.forEach(c => {
+                    doc.rect(40 + c.x, y, c.w, rowH).fill(st.fill);
+                });
+                doc.fontSize(11);
+                cols.forEach((c, i) => {
+                    doc.fillColor(i === 5 ? st.color : '#1a1a2e').text(cells[i], 40 + c.x + 6, y + 7, { width: c.w - 12 });
+                });
+                y += rowH;
+            }
+
+            Object.keys(months).sort((a, b) => a.localeCompare(b)).forEach(ym => {
+                if (y + 60 > 800) { doc.addPage(); y = 40; }
+                doc.fontSize(14).fillColor('#1a1a2e').text(`${ym.replace('-', '年')}月`, 40, y);
+                y += 28;
+                drawHeaderRow();
+                months[ym].forEach(drawRow);
+                y += 10;
+            });
+
+            doc.end();
+        });
+    });
+});
+
 // Export to Excel
 app.get('/export/excel', (req, res) => {
     const userId = req.query.userId || 1;
