@@ -464,6 +464,17 @@ app.get('/export/pdf', (req, res) => {
             doc.on('end', () => {
                 let buf = Buffer.concat(chunks).toString('latin1');
                 buf = buf.replace(/\[(\d+ 0 R) <<\n\/type \/XYZ\n\/x (\d+)\n\/y (\d+)\n>>\]/g, '[$1 /XYZ $2 $3 null]');
+                // Acrobat 需要 root /Dests 係 flat dict（/name [dest]），
+                // pdfkit 寫 /Limits + /Names tree 格式，Acrobat 唔識
+                buf = buf.replace(/\/Dests <<\s*\/Limits \[[^\]]*\]\s*\/Names \[(.*)\]\s*>>/s, (m, inner) => {
+                    const pairs = [];
+                    const re = /\(([^)]+)\) \[(\d+ 0 R) (\/XYZ [\d.]+ [\d.]+ null)\]/g;
+                    let pm;
+                    while ((pm = re.exec(inner))) {
+                        pairs.push('/' + pm[1] + ' [' + pm[2] + ' ' + pm[3] + ']');
+                    }
+                    return '/Dests << ' + pairs.join(' ') + ' >>';
+                });
                 res.send(Buffer.from(buf, 'latin1'));
             });
 
