@@ -310,18 +310,29 @@ app.get('/stats', (req, res) => {
         }
         stats.normalRate = stats.total > 0 ? Math.round(stats.normalCount / stats.total * 100) : 0;
 
-        // 圖表資料：每條記錄一個點（標籤用 M/D）
-        let chartData = filtered.map(r => {
+        // 圖表資料：按日聚合平均（早/晚平均成 1 日 1 點）
+        const dayMap = {};
+        filtered.forEach(r => {
             const d = new Date(r.recorded_at);
-            return {
-                label: `${d.getMonth() + 1}/${d.getDate()}`,
-                high: r.high_pressure, low: r.low_pressure, heart: r.heartbeat
-            };
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            if (!dayMap[key]) {
+                dayMap[key] = { label: `${d.getMonth() + 1}/${d.getDate()}`, sumH: 0, sumL: 0, sumB: 0, n: 0 };
+            }
+            dayMap[key].sumH += r.high_pressure;
+            dayMap[key].sumL += r.low_pressure;
+            dayMap[key].sumB += r.heartbeat;
+            dayMap[key].n++;
         });
+        let chartData = Object.values(dayMap).map(x => ({
+            label: x.label,
+            high: Math.round(x.sumH / x.n),
+            low: Math.round(x.sumL / x.n),
+            heart: Math.round(x.sumB / x.n)
+        }));
 
-        // 點太多會睇唔清：超過 100 點時平均抽樣（保留最後一點）
-        if (chartData.length > 100) {
-            const stride = Math.ceil(chartData.length / 100);
+        // 日數仍太多：平均抽樣至最多 90 點（保留最後一點）
+        if (chartData.length > 90) {
+            const stride = Math.ceil(chartData.length / 90);
             chartData = chartData.filter((_, i) => i % stride === 0 || i === chartData.length - 1);
         }
 

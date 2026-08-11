@@ -80,12 +80,13 @@
 
         <script>
             var data = <%- JSON.stringify(chartData) %>;
+            // 預設隱藏點，線條為主減少雜訊；hover 仍可睇值
             var bpDatasets = [
-                { label: '高壓', data: data.map(function(d) { return d.high; }), borderColor: '#e53935', backgroundColor: 'rgba(229,57,53,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 },
-                { label: '低壓', data: data.map(function(d) { return d.low; }), borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
+                { label: '高壓', data: data.map(function(d) { return d.high; }), borderColor: '#e53935', backgroundColor: 'rgba(229,57,53,0.08)', tension: 0.3, pointRadius: 0, pointHitRadius: 10, borderWidth: 2 },
+                { label: '低壓', data: data.map(function(d) { return d.low; }), borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.08)', tension: 0.3, pointRadius: 0, pointHitRadius: 10, borderWidth: 2 }
             ];
             var heartDatasets = [
-                { label: '心跳', data: data.map(function(d) { return d.heart; }), borderColor: '#f9a825', backgroundColor: 'rgba(249,168,37,0.08)', tension: 0.3, pointRadius: 2, borderWidth: 2 }
+                { label: '心跳', data: data.map(function(d) { return d.heart; }), borderColor: '#f9a825', backgroundColor: 'rgba(249,168,37,0.08)', tension: 0.3, pointRadius: 0, pointHitRadius: 10, borderWidth: 2 }
             ];
 
             function makeChart(id, datasets) {
@@ -108,12 +109,17 @@
             makeChart('bpChart', bpDatasets);
             makeChart('heartChart', heartDatasets);
 
-            // 點擊圖表放大
+            // 點擊圖表放大（放大時顯示點，方便睇實際值）
             var zoomChartInst = null;
+            function withPoints(datasets) {
+                return datasets.map(function(d) {
+                    return Object.assign({}, d, { pointRadius: 2, pointHitRadius: 10 });
+                });
+            }
             function openZoom(title, datasets) {
                 document.getElementById('zoomTitle').textContent = title;
                 document.getElementById('zoomOverlay').style.display = 'flex';
-                zoomChartInst = makeChart('zoomChart', datasets);
+                zoomChartInst = makeChart('zoomChart', withPoints(datasets));
             }
             function closeZoom() {
                 document.getElementById('zoomOverlay').style.display = 'none';
