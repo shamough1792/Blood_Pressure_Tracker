@@ -463,17 +463,25 @@ app.get('/export/pdf', (req, res) => {
             doc.on('data', c => chunks.push(c));
             doc.on('end', () => {
                 let buf = Buffer.concat(chunks).toString('latin1');
-                buf = buf.replace(/\[(\d+ 0 R) <<\n\/type \/XYZ\n\/x (\d+)\n\/y (\d+)\n>>\]/g, '[$1 /XYZ $2 $3 null]');
+                // 注意：所有替換都必須保持原 byte 長度（空白填充），
+                // 否則 xref 偏移失效，Acrobat 會話檔案損壞
+                buf = buf.replace(/\[(\d+ 0 R) <<\n\/type \/XYZ\n\/x (\d+)\n\/y (\d+)\n>>\]/g, (m, ref, x, y) => {
+                    const rep = `[${ref} /XYZ ${x} ${y} null]`;
+                    return rep + ' '.repeat(Math.max(0, m.length - rep.length));
+                });
                 // Acrobat 需要 root /Dests 係 flat dict（/name [dest]），
                 // pdfkit 寫 /Limits + /Names tree 格式，Acrobat 唔識
-                buf = buf.replace(/\/Dests <<\s*\/Limits \[[^\]]*\]\s*\/Names \[(.*)\]\s*>>/s, (m, inner) => {
+                // 用 lazy match：只到第一個 '] >>'（Dests dict 結尾），
+                // greedy 會食到 pages tree 嘅 /Kids [...] >>，破壞成個檔案
+                buf = buf.replace(/\/Dests <<\s*\/Limits \[[^\]]*\]\s*\/Names \[(.*?)\]\s*>>/s, (m, inner) => {
                     const pairs = [];
                     const re = /\(([^)]+)\) \[(\d+ 0 R) (\/XYZ [\d.]+ [\d.]+ null)\]/g;
                     let pm;
                     while ((pm = re.exec(inner))) {
                         pairs.push('/' + pm[1] + ' [' + pm[2] + ' ' + pm[3] + ']');
                     }
-                    return '/Dests << ' + pairs.join(' ') + ' >>';
+                    const rep = '/Dests << ' + pairs.join(' ') + ' >>';
+                    return rep + ' '.repeat(Math.max(0, m.length - rep.length));
                 });
                 res.send(Buffer.from(buf, 'latin1'));
             });
