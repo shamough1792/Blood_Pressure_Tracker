@@ -497,10 +497,10 @@ app.get('/export/pdf', (req, res) => {
             }
 
             function statusOf(r) {
-                // 淺色底提升文字對比度
-                if (r.high_pressure >= 140 || r.low_pressure >= 90) return { text: '高血壓', fill: 'FFEBEE', color: '#c62828' };
-                if (r.high_pressure < 90 || r.low_pressure < 60) return { text: '低血壓', fill: 'E1F5FE', color: '#0d47a1' };
-                return { text: '正常', fill: 'E8F5E9', color: '#1b5e20' };
+                // 只有異常行先有鮮明底色；正常行冇底色，易讀
+                if (r.high_pressure >= 140 || r.low_pressure >= 90) return { text: '高血壓', fill: 'FFCDD2', color: '#b71c1c' };
+                if (r.high_pressure < 90 || r.low_pressure < 60) return { text: '低血壓', fill: 'B3E5FC', color: '#0d47a1' };
+                return { text: '正常', fill: null, color: '#1a1a2e' };
             }
 
             // 每月新一頁：月份標題 + 表頭
@@ -522,9 +522,11 @@ app.get('/export/pdf', (req, res) => {
                     String(r.heartbeat),
                     st.text
                 ];
-                cols.forEach(c => {
-                    doc.rect(40 + c.x, y, c.w, rowH).fill(st.fill);
-                });
+                if (st.fill) {
+                    cols.forEach(c => {
+                        doc.rect(40 + c.x, y, c.w, rowH).fill(st.fill);
+                    });
+                }
                 doc.fontSize(11);
                 cols.forEach((c, i) => {
                     doc.fillColor(i === 5 ? st.color : '#1a1a2e').text(cells[i], 40 + c.x + 6, y + 7, { width: c.w - 12 });
