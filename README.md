@@ -2,10 +2,10 @@
 
 <br>
 
-![Docker Image Version](https://img.shields.io/badge/docker-ghcr.io-blue?style=flat&logo=docker)
+[![Latest Release](https://img.shields.io/badge/version-v2.4-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.4)
+[![Docker Image Version](https://img.shields.io/badge/docker-ghcr.io-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
 ![Node.js Version](https://img.shields.io/badge/node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
 ![MariaDB Version](https://img.shields.io/badge/mariadb-%3E%3D10.6-003545?style=flat&logo=mariadb)
-![Version](https://img.shields.io/badge/version-2.4-green)
 ![License](https://img.shields.io/badge/license-MIT-orange?style=flat)
 ![PWA Ready](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=flat&logo=pwa)
 
