@@ -44,11 +44,12 @@ router.post('/add', (req, res) => {
     const recordedAt = toRecordedAt(record_date, time_of_day);
 
     const query = 'INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)';
-    db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt, user_id || 1], (err) => {
+    db.query(query, [high_pressure, low_pressure, heartbeat, recordedAt, user_id || 1], (err, result) => {
         if (err) {
             console.error('Error inserting record:', err);
             return res.status(500).send('Error adding record');
         }
+        console.log(`[記錄] 新增 id=${result.insertId} user=${user_id || 1} ${high_pressure}/${low_pressure}/${heartbeat} ${recordedAt.getHours() < 12 ? '早' : '晚'} ${record_date || '今天'}`);
         db.query('SELECT name FROM users WHERE id = ?', [user_id || 1], (err2, users) => {
             const userName = users && users.length ? users[0].name : '';
             res.render('index', { successMessage: '血壓記錄已成功添加！', titleSuffix: process.env.TITLE_SUFFIX || '', userId: user_id || 1, userName });
@@ -91,6 +92,7 @@ router.post('/update/:id', (req, res) => {
             console.error('Error updating record:', err);
             return res.status(500).send('Error updating record');
         }
+        console.log(`[記錄] 修改 id=${recordId} user=${req.query.userId || 1} ${high_pressure}/${low_pressure}/${heartbeat} ${recordedAt.getHours() < 12 ? '早' : '晚'} ${record_date || '今天'}`);
         res.redirect('/records?userId=' + (req.query.userId || 1) + '&name=' + encodeURIComponent(req.query.name || ''));
     });
 });
@@ -101,6 +103,7 @@ router.post('/delete/:id', (req, res) => {
     const query = 'DELETE FROM records WHERE id = ?';
     db.query(query, [recordId], (err) => {
         if (err) throw err;
+        console.log(`[記錄] 刪除 id=${recordId} user=${req.body.userId || 1}`);
         res.redirect('/records?userId=' + (req.body.userId || 1) + '&name=' + encodeURIComponent(req.body.name || ''));
     });
 });
