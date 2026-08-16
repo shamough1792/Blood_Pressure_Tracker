@@ -14,7 +14,7 @@ const port = process.env.PORT || 3000;
 const db = mysql.createConnection({
     host: process.env.DB_HOST || '192.168.1.222',
     user: process.env.DB_USER || 'tracker_user',
-    password: process.env.DB_PASSWORD || '!Lkw988667',
+    password: process.env.DB_PASSWORD || 'password',
     database: process.env.DB_NAME || 'blood_test'
 });
 
