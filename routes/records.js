@@ -32,6 +32,21 @@ function toRecordedAt(record_date, time_of_day) {
         : new Date(`${date}T08:00:00`);
 }
 
+// API: 檢查同日同時段有冇已有記錄
+router.get('/api/check-duplicate', (req, res) => {
+    const { userId, date, period } = req.query;
+    if (!userId || !date || !period) return res.json({ duplicate: false });
+    const isPM = period === 'PM';
+    db.query(
+        'SELECT id FROM records WHERE user_id = ? AND DATE(recorded_at) = ? AND (HOUR(recorded_at) < 12) = ?',
+        [userId, date, isPM ? 0 : 1],
+        (err, rows) => {
+            if (err) return res.json({ duplicate: false });
+            res.json({ duplicate: rows.length > 0 });
+        }
+    );
+});
+
 // 新增記錄
 router.post('/add', (req, res) => {
     const { high_pressure, low_pressure, heartbeat, record_date, time_of_day, user_id } = req.body;

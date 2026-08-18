@@ -274,8 +274,28 @@
         document.getElementById('bpForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const formData = new FormData(this);
-            fetch(this.action, {
+            const form = this;
+            const date = document.getElementById('recordDate').value;
+            const period = document.getElementById('timeOfDay').value;
+            const userId = form.querySelector('input[name="user_id"]').value;
+
+            // 檢查同日同時段已有記錄
+            fetch('/api/check-duplicate?userId=' + encodeURIComponent(userId) + '&date=' + encodeURIComponent(date) + '&period=' + encodeURIComponent(period))
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    if (data.duplicate && !confirm('今日' + (period === 'PM' ? '晚' : '早') + '已經有一條記錄，確定要再加嗎？')) {
+                        return;
+                    }
+                    submitForm(form);
+                })
+                .catch(function() {
+                    submitForm(form); // 檢查失敗照常提交
+                });
+        });
+
+        function submitForm(form) {
+            const formData = new FormData(form);
+            fetch(form.action, {
                 method: 'POST',
                 body: new URLSearchParams(formData)
             }).then(function(resp) {
@@ -287,7 +307,7 @@
             }).catch(function() {
                 alert('網路錯誤，請重試');
             });
-        });
+        }
 
         function showSuccess() {
             document.getElementById('bpForm').style.display = 'none';
