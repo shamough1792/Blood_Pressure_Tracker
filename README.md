@@ -2,7 +2,7 @@
 
 <br>
 
-[![Latest Release](https://img.shields.io/badge/version-v2.4-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.4)
+[![Latest Release](https://img.shields.io/badge/version-v2.4.1-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.4.1)
 [![Docker Image Version](https://img.shields.io/badge/docker-ghcr.io-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
 ![Node.js Version](https://img.shields.io/badge/node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
 ![MariaDB Version](https://img.shields.io/badge/mariadb-%3E%3D10.6-003545?style=flat&logo=mariadb)
@@ -200,6 +200,7 @@ services:
 * **2.3.2** — Docker image 瘦身：移除未用套件、改用 Alpine，508MB → 298MB
 * **2.3.3** — 全部 emoji 改用 SVG 圖示，跨裝置顯示一致
 * **2.4** — 代碼重構（路由拆分）、血壓輸入驗證、上傳限制、操作記錄 Log
+* **2.4.1** — 重覆記錄警告：同日同時段已有記錄時提示確認。
 
 <br>
 
