@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
+require('dotenv').config();
 require('./db'); // 啟動 DB 連線 + keepalive
 const { createAdminAuth } = require('./middleware/adminAuth');
 
