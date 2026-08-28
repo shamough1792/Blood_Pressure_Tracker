@@ -1,0 +1,90 @@
+const crypto = require('node:crypto');
+
+const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 小時
+const COOKIE_NAME = 'admin_session';
+
+function extractToken(cookieHeader) {
+    const cookie = cookieHeader || '';
+    const match = new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`).exec(cookie);
+    return match ? match[1] : null;
+}
+
+// 建立認證實例：驗證必填設定，回傳一組關閉式函式
+function createAdminAuth({ username, password, sessionSecret, now = Date.now } = {}) {
+    if (!username) throw new Error('ADMIN_USER must be configured');
+    if (!password) throw new Error('ADMIN_PASSWORD must be configured');
+    if (!sessionSecret) throw new Error('SESSION_SECRET must be configured');
+
+    const expectedUser = Buffer.from(username, 'utf8');
+    const expectedPassword = Buffer.from(password, 'utf8');
+
+    function sign(payload) {
+        const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+        const signature = crypto.createHmac('sha256', sessionSecret).update(b64).digest('base64url');
+        return `${b64}.${signature}`;
+    }
+
+    function credentialsMatch(suppliedUser, suppliedPassword) {
+        const a = Buffer.from(suppliedUser, 'utf8');
+        const b = Buffer.from(suppliedPassword, 'utf8');
+        return a.length === expectedUser.length && crypto.timingSafeEqual(a, expectedUser)
+            && b.length === expectedPassword.length && crypto.timingSafeEqual(b, expectedPassword);
+    }
+
+    function issueToken(issuedAt = now()) {
+        return sign({ authenticated: true, issuedAt });
+    }
+
+    function verifyToken(token, currentTime = now()) {
+        if (typeof token !== 'string' || token === '') return null;
+        const separator = token.lastIndexOf('.');
+        if (separator < 0) return null;
+
+        const payloadB64 = token.slice(0, separator);
+        const signature = token.slice(separator + 1);
+
+        const expectedSignature = crypto.createHmac('sha256', sessionSecret)
+            .update(payloadB64)
+            .digest('base64url');
+        const a = Buffer.from(signature, 'utf8');
+        const b = Buffer.from(expectedSignature, 'utf8');
+        if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+
+        let payload;
+        try {
+            payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+        } catch (_) {
+            return null;
+        }
+        if (payload.authenticated !== true) return null;
+        if (typeof payload.issuedAt !== 'number' || !Number.isFinite(payload.issuedAt)) return null;
+        if (currentTime - payload.issuedAt > SESSION_MAX_AGE_MS) return null;
+
+        return { authenticated: true, issuedAt: payload.issuedAt };
+    }
+
+    function isAuthenticated(req) {
+        const cookie = req.headers.cookie || '';
+        const match = new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`).exec(cookie);
+        const token = match ? match[1] : null;
+        return token !== null && verifyToken(token) !== null;
+    }
+
+    return {
+        credentialsMatch,
+        issueToken,
+        verifyToken,
+        isAuthenticated
+    };
+}
+
+// 頂層薄包裝：測試直接呼叫這兩個函式，secret 不外露
+function createSessionToken(auth, issuedAt) {
+    return auth.issueToken(issuedAt);
+}
+
+function verifySessionToken(auth, token, currentTime) {
+    return auth.verifyToken(token, currentTime);
+}
+
+module.exports = { createAdminAuth, createSessionToken, verifySessionToken, COOKIE_NAME, SESSION_MAX_AGE_MS };
