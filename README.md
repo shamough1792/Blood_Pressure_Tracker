@@ -121,6 +121,9 @@ CREATE TABLE records (
 | `DB_PASSWORD` | 資料庫密碼 | |
 | `DB_NAME` | 資料庫名稱 | `blood_test` |
 | `PORT` | 網站埠號 | `3000` |
+| `ADMIN_USER` | 管理後台帳號 | |
+| `ADMIN_PASSWORD` | 管理後台密碼 | |
+| `SESSION_SECRET` | Session cookie 簽名密鑰（高熵隨機） | |
 
 #### 啟動
 
@@ -129,6 +132,20 @@ npm start
 ```
 
 開啟 http://localhost:3000 即可看到使用者選擇頁。
+
+<br>
+
+## 管理後台認證
+
+管理後台位於 `/admin`，需登入才能管理使用者、匯入 SQL 或下載 SQL 備份；一般血壓記錄功能維持公開。
+
+設定三個環境變數後，使用以下指令產生高熵的 `SESSION_SECRET`：
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+任一個認證變數未設定時，服務不會啟動。Session cookie 具 `HttpOnly` 與 `SameSite=Lax` 屬性，於 production 加上 `Secure`；部署需透過 HTTPS reverse proxy（如 Synology 的 reverse proxy）提供 TLS，請勿直接將 3000 port 暴露到公網。
 
 <br>
 
