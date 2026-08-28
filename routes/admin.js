@@ -39,7 +39,10 @@ module.exports = function createAdminRouter(adminAuth) {
 
     // 登出：清除 cookie 並導向首頁
     router.post('/admin/logout', (req, res) => {
-        res.clearCookie(COOKIE_NAME, { path: '/' });
+        res.clearCookie(COOKIE_NAME, {
+            path: '/',
+            secure: process.env.NODE_ENV === 'production'
+        });
         res.redirect('/');
     });
 

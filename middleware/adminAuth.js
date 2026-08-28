@@ -25,6 +25,7 @@ function createAdminAuth({ username, password, sessionSecret, now = Date.now } =
     }
 
     function credentialsMatch(suppliedUser, suppliedPassword) {
+        if (typeof suppliedUser !== 'string' || typeof suppliedPassword !== 'string') return false;
         const a = Buffer.from(suppliedUser, 'utf8');
         const b = Buffer.from(suppliedPassword, 'utf8');
         return a.length === expectedUser.length && crypto.timingSafeEqual(a, expectedUser)
@@ -64,10 +65,7 @@ function createAdminAuth({ username, password, sessionSecret, now = Date.now } =
     }
 
     function isAuthenticated(req) {
-        const cookie = req.headers.cookie || '';
-        const match = new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`).exec(cookie);
-        const token = match ? match[1] : null;
-        return token !== null && verifyToken(token) !== null;
+        return verifyToken(extractToken(req.headers.cookie)) !== null;
     }
 
     return {

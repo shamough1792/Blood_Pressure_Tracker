@@ -43,6 +43,24 @@ test('錯誤帳密、偽造或無效 token 均遭拒絕', () => {
     assert.equal(verifySessionToken(auth, '', NOW + 1), null);
 });
 
+test('isAuthenticated 依 cookie 正確判別登入狀態', () => {
+    const auth = createAdminAuth(CONFIG);
+    const token = createSessionToken(auth, NOW);
+
+    assert.equal(auth.isAuthenticated({ headers: { cookie: `admin_session=${token}` } }), true);
+    assert.equal(auth.isAuthenticated({ headers: { cookie: 'other=1; admin_session=' + token } }), true);
+    assert.equal(auth.isAuthenticated({ headers: { cookie: 'admin_session=forged' } }), false);
+    assert.equal(auth.isAuthenticated({ headers: {} }), false);
+});
+
+test('credentialsMatch 對非字串輸入回傳 false 而不拋出例外', () => {
+    const auth = createAdminAuth(CONFIG);
+
+    assert.equal(auth.credentialsMatch(undefined, 'secret'), false);
+    assert.equal(auth.credentialsMatch('admin', null), false);
+    assert.equal(auth.credentialsMatch(123, 456), false);
+});
+
 test('過期、格式錯誤和簽名長度不符 token 不會通過或拋出例外', () => {
     const auth = createAdminAuth(CONFIG);
     const oldToken = createSessionToken(auth, NOW - 24 * 60 * 60 * 1000 - 1);
