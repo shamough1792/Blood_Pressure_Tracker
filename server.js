@@ -1,7 +1,16 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
+require('dotenv').config();
 require('./db'); // 啟動 DB 連線 + keepalive
+const { createAdminAuth } = require('./middleware/adminAuth');
+
+// 啟動時驗證管理後台認證設定，任一缺失即拒絕啟動
+const adminAuth = createAdminAuth({
+    username: process.env.ADMIN_USER,
+    password: process.env.ADMIN_PASSWORD,
+    sessionSecret: process.env.SESSION_SECRET
+});
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -16,7 +25,7 @@ app.use(fileUpload({ limits: { fileSize: 10 * 1024 * 1024 } })); // 匯入檔上
 // Routes
 app.use(require('./routes/portal'));
 app.use(require('./routes/records'));
-app.use(require('./routes/admin'));
+app.use(require('./routes/admin')(adminAuth));
 
 // Start server
 app.listen(port, () => {
