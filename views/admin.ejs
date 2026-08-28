@@ -37,7 +37,9 @@
         <div class="top-nav" style="max-width:720px;">
             <a href="/" class="nav-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回</a>
             <h1>管理使用者</h1>
-            <span style="width:60px;"></span>
+            <form method="POST" action="/admin/logout" style="margin:0;">
+                <button type="submit" class="btn-sm" style="background:#ffebee;color:#c62828;border:none;cursor:pointer;font-size:15px;padding:10px 16px;border-radius:10px;">登出</button>
+            </form>
         </div>
 
         <!-- 使用者列表 -->
@@ -128,7 +130,11 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, color })
-        }).then(r => r.json()).then(data => {
+        }).then(r => {
+            if (r.status === 401) { window.location.href = '/admin/login'; return; }
+            return r.json();
+        }).then(data => {
+            if (!data) return;
             if (data.error) { alert('新增失敗：' + data.error); return; }
             location.reload();
         }).catch(e => alert('新增失敗，請檢查網路連線'));
@@ -138,7 +144,11 @@
     function deleteUser(id, name) {
         if (!confirm('確定刪除 ' + name + '？所有相關血壓記錄也會一併刪除。')) return;
         fetch('/api/users/' + id, { method: 'DELETE' })
-            .then(r => r.json()).then(data => {
+            .then(r => {
+                if (r.status === 401) { window.location.href = '/admin/login'; return; }
+                return r.json();
+            }).then(data => {
+                if (!data) return;
                 if (data.error) { alert('刪除失敗：' + data.error); return; }
                 location.reload();
             }).catch(e => alert('刪除失敗'));
@@ -163,7 +173,11 @@
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, color })
-        }).then(r => r.json()).then(data => {
+        }).then(r => {
+            if (r.status === 401) { window.location.href = '/admin/login'; return; }
+            return r.json();
+        }).then(data => {
+            if (!data) return;
             if (data.error) { alert('編輯失敗：' + data.error); return; }
             location.reload();
         }).catch(e => alert('編輯失敗'));
@@ -185,7 +199,11 @@
         document.getElementById('importBtn').textContent = '匯入中...';
 
         fetch('/api/import-sql', { method: 'POST', body: formData })
-            .then(r => r.text()).then(msg => {
+            .then(r => {
+                if (r.status === 401) { window.location.href = '/admin/login'; return null; }
+                return r.text();
+            }).then(msg => {
+                if (msg === null) return;
                 document.getElementById('importProgress').style.display = 'none';
                 const el = document.getElementById('importResult');
                 el.style.display = 'block';
