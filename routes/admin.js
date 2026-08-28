@@ -1,10 +1,53 @@
 const express = require('express');
 const db = require('../db');
 const { formatDateForFilename } = require('../lib/util');
-const router = express.Router();
+const { createSessionToken, COOKIE_NAME } = require('../middleware/adminAuth');
 
-// 管理後台
-router.get('/admin', (req, res) => {
+module.exports = function createAdminRouter(adminAuth) {
+    const router = express.Router();
+
+    // 未登入：頁面導向登入頁；API 回傳 401 JSON
+    function requireAdmin(req, res, next) {
+        if (adminAuth.isAuthenticated(req)) return next();
+        if (req.path.startsWith('/api/')) {
+            return res.status(401).json({ error: '未登入或登入已失效' });
+        }
+        res.redirect('/admin/login');
+    }
+
+    // 已登入者前往登入頁直接導向管理頁
+    router.get('/admin/login', (req, res) => {
+        if (adminAuth.isAuthenticated(req)) return res.redirect('/admin');
+        res.render('admin-login', { error: null, titleSuffix: process.env.TITLE_SUFFIX || '' });
+    });
+
+    // 驗證帳密：成功設定 session cookie 並導向管理頁；失敗重新顯示登入頁（訊息固定）
+    router.post('/admin/login', (req, res) => {
+        const { username, password } = req.body;
+        if (adminAuth.credentialsMatch(username || '', password || '')) {
+            const token = createSessionToken(adminAuth, Date.now());
+            res.cookie(COOKIE_NAME, token, {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: process.env.NODE_ENV === 'production'
+            });
+            return res.redirect('/admin');
+        }
+        res.status(401).render('admin-login', { error: true, titleSuffix: process.env.TITLE_SUFFIX || '' });
+    });
+
+    // 登出：清除 cookie 並導向首頁
+    router.post('/admin/logout', (req, res) => {
+        res.clearCookie(COOKIE_NAME, { path: '/' });
+        res.redirect('/');
+    });
+
+    // 其餘所有管理路由（含 /api/*）需登入
+    router.use(requireAdmin);
+
+    // 管理後台
+    router.get('/admin', (req, res) => {
     db.query('SELECT * FROM users ORDER BY id ASC', (err, users) => {
         if (err) throw err;
         res.render('admin', { users, titleSuffix: process.env.TITLE_SUFFIX || '' });
@@ -153,4 +196,5 @@ router.post('/api/import-sql', async (req, res) => {
     res.send(`匯入完成：成功 ${success} 筆，失敗 ${failed} 筆`);
 });
 
-module.exports = router;
+    return router;
+};
