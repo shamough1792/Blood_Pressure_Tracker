@@ -566,22 +566,33 @@ body {
 .cal-periods {
     display: flex;
     flex-direction: column;
+    gap: 1px;
+    margin-top: 3px;
+}
+
+.period-marker {
+    display: flex;
+    align-items: center;
     gap: 2px;
-    margin-top: 2px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
 }
 
 .period-dot {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 9px;
-    background: #e0e0e0;
-    color: #999;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #64748b;
+    box-shadow: 0 0 0 1px #fff;
 }
 
-.period-dot.has {
+.period-marker.has {
+    color: #1b5e3f;
+}
+
+.period-marker.has .period-dot {
     background: #2d6a4f;
-    color: #fff;
 }
 
 /* --- 當日詳細 --- */
@@ -740,6 +751,18 @@ body {
     max-width: none;
     width: auto;
     border-radius: 10px;
+}
+
+.card-actions .btn-danger {
+    background: #fff;
+    border: 1px solid #ef9a9a;
+    color: #c62828;
+    box-shadow: none;
+}
+
+.card-actions .btn-danger:hover {
+    background: #ffebee;
+    box-shadow: none;
 }
 
 /* --- 無記錄提示 --- */
@@ -1205,6 +1228,72 @@ body {
     box-shadow: 0 3px 10px rgba(45, 106, 79, 0.35);
 }
 
+.health-overview {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.latest-reading,
+.recent-status {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.health-heading {
+    color: #52616b;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.health-heading span {
+    font-size: 13px;
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+.latest-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    font-size: 15px;
+}
+
+.latest-values .val-box {
+    font-size: 20px;
+    margin-right: 3px;
+}
+
+.health-status {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.health-status.normal,
+.recent-status.normal { color: #1b5e3f; background: #e8f5e9; }
+.health-status.high,
+.recent-status.high { color: #b71c1c; background: #ffebee; }
+.health-status.low,
+.recent-status.low { color: #0d47a1; background: #e3f2fd; }
+
+.recent-status p {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.recent-status .health-heading {
+    color: inherit;
+}
+
 .stat-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1356,6 +1445,8 @@ body {
 }
 
 @media (max-width: 480px) {
+    .health-overview { grid-template-columns: 1fr; }
+    .latest-reading, .recent-status { padding: 14px; }
     .stat-cards { gap: 8px; }
     .stat-card { padding: 10px 6px; }
     .stat-label { font-size: 12px; margin-bottom: 6px; }

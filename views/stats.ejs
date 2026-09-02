@@ -13,7 +13,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="top-nav">
+        <div class="top-nav center-title">
             <a href="/records?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="nav-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回</a>
             <h1>統計<%= typeof userName !== 'undefined' && userName ? ' (' + userName + ')' : '' %></h1>
             <span style="width:60px;"></span>
@@ -28,6 +28,22 @@
         </div>
 
         <% if (stats.total > 0) { %>
+        <section class="health-overview" aria-label="近期健康摘要">
+            <div class="latest-reading">
+                <div class="health-heading">最新量測 <span><%= healthOverview.latest.recordedAt %></span></div>
+                <div class="latest-values">
+                    <span><b class="val-box val-sys"><%= healthOverview.latest.high %></b> 高壓</span>
+                    <span><b class="val-box val-dia"><%= healthOverview.latest.low %></b> 低壓</span>
+                    <span><b class="val-box val-heart"><%= healthOverview.latest.heart %></b> 心跳</span>
+                </div>
+                <span class="health-status <%= healthOverview.latest.className %>"><%= healthOverview.latest.label %></span>
+            </div>
+            <div class="recent-status <%= healthOverview.recent.className %>">
+                <div class="health-heading">近期狀態</div>
+                <p><%= healthOverview.recent.message %></p>
+            </div>
+        </section>
+
         <!-- 摘要 -->
         <div class="stat-cards">
             <div class="stat-card">

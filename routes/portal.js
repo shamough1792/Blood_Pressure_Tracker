@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { buildHealthOverview } = require('../lib/health');
 const router = express.Router();
 
 // 使用者選擇頁
@@ -83,6 +84,7 @@ router.get('/stats', (req, res) => {
             : new Date(now.getFullYear(), now.getMonth() - (range - 1), 1);
 
         const filtered = results.filter(r => new Date(r.recorded_at) >= cutoff);
+        const healthOverview = filtered.length ? buildHealthOverview(filtered) : null;
 
         // 摘要統計
         const stats = {
@@ -132,7 +134,7 @@ router.get('/stats', (req, res) => {
         }
 
         res.render('stats', {
-            stats, chartData, range, userId, userName,
+            stats, chartData, healthOverview, range, userId, userName,
             titleSuffix: process.env.TITLE_SUFFIX || ''
         });
     });
