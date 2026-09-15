@@ -98,6 +98,15 @@
                 return worst === 2 ? 'high' : (worst === 1 ? 'low' : 'normal');
             }
 
+            function periodStatus(record) {
+                if (!record) return 'empty';
+                var hp = parseInt(record.high_pressure);
+                var lp = parseInt(record.low_pressure);
+                if (hp >= 140 || lp >= 90) return 'high';
+                if (hp < 90 || lp < 60) return 'low';
+                return 'normal';
+            }
+
             function bpClass(record) {
                 var hp = parseInt(record.high_pressure);
                 var lp = parseInt(record.low_pressure);
@@ -108,6 +117,12 @@
         %>
 
         <!-- 月曆 -->
+        <div class="calendar-legend" aria-label="月曆狀態圖例">
+            <span><b>早</b> 上午</span>
+            <span><b>晚</b> 晚上</span>
+            <span><b class="legend-state-done">✓</b> 已記錄</span>
+            <span><b class="legend-state-missing">—</b> 未記錄</span>
+        </div>
         <div class="calendar">
             <div class="cal-weekdays">
                 <% weekdayNames.forEach(function(w) { %><span class="cal-wd"><%= w %></span><% }); %>
@@ -117,14 +132,12 @@
                 <% for (var day = 1; day <= daysInMonth; day++) { %>
                     <% var wd = new Date(year, month - 1, day).getDay(); %>
                     <a href="/records?yearMonth=<%= currentMonth %>&day=<%= day %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>"
-                       class="cal-cell <%= dayStatus(day) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %> <%= day === selectedDay ? 'selected' : '' %>">
+                       class="cal-cell <%= dayStatus(day) %> period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %> period-pm-<%= periodStatus(dayMap[day] && dayMap[day]['晚']) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %> <%= day === selectedDay ? 'selected' : '' %>">
                         <span class="cal-daynum"><%= day %></span>
-                        <% if (dayMap[day]) { %>
-                            <span class="cal-periods" aria-label="<%= dayMap[day]['早'] ? '已記錄早上' : '未記錄早上' %>，<%= dayMap[day]['晚'] ? '已記錄晚上' : '未記錄晚上' %>">
-                                <span class="period-marker <%= dayMap[day]['早'] ? 'has' : '' %>" aria-hidden="true"><span class="period-dot"></span>早</span>
-                                <span class="period-marker <%= dayMap[day]['晚'] ? 'has' : '' %>" aria-hidden="true"><span class="period-dot"></span>晚</span>
-                            </span>
-                        <% } %>
+                        <span class="cal-periods" aria-label="<%= dayMap[day] && dayMap[day]['早'] ? '早上已記錄' : '早上未記錄' %>，<%= dayMap[day] && dayMap[day]['晚'] ? '晚上已記錄' : '晚上未記錄' %>">
+                            <span class="period-marker period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %>"><span class="period-label">早</span><span class="period-state"><%= dayMap[day] && dayMap[day]['早'] ? '✓' : '—' %></span></span>
+                            <span class="period-marker period-pm-<%= periodStatus(dayMap[day] && dayMap[day]['晚']) %>"><span class="period-label">晚</span><span class="period-state"><%= dayMap[day] && dayMap[day]['晚'] ? '✓' : '—' %></span></span>
+                        </span>
                     </a>
                 <% } %>
             </div>

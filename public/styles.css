@@ -465,6 +465,42 @@ body {
 }
 
 /* --- 月曆視圖 --- */
+.calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 12px;
+    margin: 0 0 8px;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.calendar-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 7px;
+    border: 1px solid #cbd5df;
+    border-radius: 6px;
+    background: #fff;
+    white-space: nowrap;
+}
+
+.calendar-legend span b:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    background: #e8edf2;
+    color: #1f2933;
+}
+
+.calendar-legend .legend-state-done { background: #d9f0dc; color: #1b5e3f; }
+.calendar-legend .legend-state-missing { background: #e8edf2; color: #334155; }
+
 .calendar {
     background: #fff;
     border-radius: 16px;
@@ -574,26 +610,36 @@ body {
     display: flex;
     align-items: center;
     gap: 2px;
-    color: #64748b;
+    justify-content: space-between;
+    width: 32px;
+    min-width: 32px;
+    padding: 2px 3px;
+    border: 1px solid rgba(71, 85, 105, 0.22);
+    border-radius: 4px;
+    color: #334155;
     font-size: 10px;
     font-weight: 700;
+    line-height: 1.1;
 }
 
-.period-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #64748b;
-    box-shadow: 0 0 0 1px #fff;
-}
-
-.period-marker.has {
-    color: #1b5e3f;
-}
-
-.period-marker.has .period-dot {
-    background: #2d6a4f;
-}
+.period-label { font-weight: 700; }
+.period-state { font-size: 11px; font-weight: 800; }
+.period-marker.period-am-normal .period-state,
+.period-marker.period-pm-normal .period-state { color: #1b5e3f; }
+.period-marker.period-am-high .period-state,
+.period-marker.period-pm-high .period-state { color: #b71c1c; }
+.period-marker.period-am-low .period-state,
+.period-marker.period-pm-low .period-state { color: #0d47a1; }
+.period-marker.period-am-empty .period-state,
+.period-marker.period-pm-empty .period-state { color: #64748b; }
+.period-marker.period-am-normal,
+.period-marker.period-pm-normal { background: #e8f5e9; }
+.period-marker.period-am-high,
+.period-marker.period-pm-high { background: #ffebee; }
+.period-marker.period-am-low,
+.period-marker.period-pm-low { background: #e3f2fd; }
+.period-marker.period-am-empty,
+.period-marker.period-pm-empty { background: #eef2f6; }
 
 /* --- 當日詳細 --- */
 .day-detail {
