@@ -2,7 +2,7 @@
 
 <br>
 
-[![Latest Release](https://img.shields.io/badge/version-v2.7-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.7)
+[![Latest Release](https://img.shields.io/badge/version-v2.7.1-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.7.1)
 [![Docker Image Version](https://img.shields.io/badge/docker-ghcr.io-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
 ![Node.js Version](https://img.shields.io/badge/node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
 ![MariaDB Version](https://img.shields.io/badge/mariadb-%3E%3D10.6-003545?style=flat&logo=mariadb)
@@ -230,6 +230,7 @@ services:
 * **2.5** — 管理後台 Session 認證：登入頁、HMAC 簽名 Session cookie、dotenv 支援、管理 API 保護
 * **2.6** — 介面優化：首頁使用者選擇、月曆早晚標示、健康摘要及全站標題置中
 * **2.7** — 月曆改用早／晚雙列狀態顯示，提升手機閱讀清晰度
+* **2.7.1** — 修正 iOS 窄螢幕月份選擇器文字被裁切問題
 
 <br>
 

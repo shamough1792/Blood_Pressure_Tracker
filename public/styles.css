@@ -445,17 +445,24 @@ body {
 }
 
 .month-select {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
     font-size: 26px;
     font-weight: 700;
     color: #1a1a2e;
     background: #fff;
     border: 2px solid #d0d7de;
     border-radius: 12px;
-    padding: 10px 32px 10px 16px;
+    padding: 10px 36px 10px 16px;
     cursor: pointer;
-    min-width: 160px;
     text-align: center;
-    appearance: auto;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px 16px;
     outline: none;
 }
 
@@ -927,6 +934,27 @@ body {
     .month-nav .month-label {
         font-size: 22px;
         min-width: 140px;
+    }
+
+    .month-nav {
+        gap: 8px;
+    }
+
+    .month-nav .arrow-btn {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+    }
+
+    .month-nav .arrow-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .month-select {
+        font-size: 22px;
+        padding: 8px 32px 8px 10px;
+        background-position: right 10px center;
     }
 
     .top-nav h1 {
