@@ -3,6 +3,14 @@ const db = require('../db');
 const { formatDateForFilename } = require('../lib/util');
 const { createSessionToken, COOKIE_NAME } = require('../middleware/adminAuth');
 
+function isHttpsRequest(req) {
+    const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
+        .split(',')[0]
+        .trim()
+        .toLowerCase();
+    return req.protocol === 'https' || req.secure === true || forwardedProto === 'https';
+}
+
 module.exports = function createAdminRouter(adminAuth) {
     const router = express.Router();
 
@@ -30,7 +38,7 @@ module.exports = function createAdminRouter(adminAuth) {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: process.env.NODE_ENV === 'production'
+                secure: isHttpsRequest(req)
             });
             return res.redirect('/admin');
         }
@@ -41,7 +49,7 @@ module.exports = function createAdminRouter(adminAuth) {
     router.post('/admin/logout', (req, res) => {
         res.clearCookie(COOKIE_NAME, {
             path: '/',
-            secure: process.env.NODE_ENV === 'production'
+            secure: isHttpsRequest(req)
         });
         res.redirect('/');
     });
