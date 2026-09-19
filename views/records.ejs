@@ -30,7 +30,6 @@
             var currentMonth = months.length > 0 ? months[currentIdx] : null;
             var prevMonth = currentIdx > 0 ? months[currentIdx - 1] : null;
             var nextMonth = currentIdx < months.length - 1 ? months[currentIdx + 1] : null;
-            var selectedDay = typeof selectedDay !== 'undefined' && selectedDay ? selectedDay : null;
 
             function formatMonth(ym) {
                 return ym ? ym.replace('-', '年') + '月' : '';
@@ -131,8 +130,8 @@
                 <% for (var i = 0; i < firstWeekday; i++) { %><span class="cal-blank"></span><% } %>
                 <% for (var day = 1; day <= daysInMonth; day++) { %>
                     <% var wd = new Date(year, month - 1, day).getDay(); %>
-                    <a href="/records?yearMonth=<%= currentMonth %>&day=<%= day %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>"
-                       class="cal-cell <%= dayStatus(day) %> period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %> period-pm-<%= periodStatus(dayMap[day] && dayMap[day]['晚']) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %> <%= day === selectedDay ? 'selected' : '' %>">
+                    <a href="/records/day?date=<%= year %>-<%= String(month).padStart(2, '0') %>-<%= String(day).padStart(2, '0') %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>"
+                       class="cal-cell <%= dayStatus(day) %> period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %> period-pm-<%= periodStatus(dayMap[day] && dayMap[day]['晚']) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %>">
                         <span class="cal-daynum"><%= day %></span>
                         <span class="cal-periods" aria-label="<%= dayMap[day] && dayMap[day]['早'] ? '早上已記錄' : '早上未記錄' %>，<%= dayMap[day] && dayMap[day]['晚'] ? '晚上已記錄' : '晚上未記錄' %>">
                             <span class="period-marker period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %>"><span class="period-label">早</span><span class="period-state"><%= dayMap[day] && dayMap[day]['早'] ? '✓' : '—' %></span></span>
@@ -143,49 +142,6 @@
             </div>
         </div>
 
-        <!-- 所選日期的詳細 -->
-        <% if (selectedDay && dayMap[selectedDay]) { %>
-        <div class="day-detail">
-            <h3><%= year %>年<%= month %>月<%= selectedDay %>日 (<%= weekdayNames[new Date(year, month - 1, selectedDay).getDay()] %>)</h3>
-            <% ['早', '晚'].forEach(function(p) { if (dayMap[selectedDay][p]) {
-                var r = dayMap[selectedDay][p];
-                var hp = parseInt(r.high_pressure);
-                var lp = parseInt(r.low_pressure);
-                var statusText = '';
-                var statusClass = '';
-                if (hp >= 140 || lp >= 90) { statusClass = 'bp-high'; statusText = '高血壓'; }
-                else if (hp < 90 || lp < 60) { statusClass = 'bp-low'; statusText = '低血壓'; }
-                else { statusClass = 'bp-normal'; statusText = '正常'; }
-            %>
-                <div class="day-record <%= bpClass(r) %>">
-                    <div class="day-record-head">
-                        <span class="day-period"><%= p %></span>
-                        <span class="day-values">
-                            <span class="dv-row">
-                                <span class="dv-label">高壓</span> <b class="val-box val-sys"><%= r.high_pressure %></b>
-                                <span class="dv-label">低壓</span> <b class="val-box val-dia"><%= r.low_pressure %></b>
-                            </span>
-                            <span class="dv-row">
-                                <span class="dv-label">心跳</span> <b class="val-box val-heart"><%= r.heartbeat %></b>
-                            </span>
-                        </span>
-                        <span class="bp-status <%= statusClass %>" style="font-size:14px;padding:4px 12px;"><%= statusText %></span>
-                    </div>
-                    <div class="card-actions">
-                        <a href="/modify/<%= r.id %>?userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>" class="btn btn-secondary">修改</a>
-                        <form action="/delete/<%= r.id %>" method="POST" style="display:inline;"
-                              onsubmit="return confirm('確定要刪除這條記錄嗎？');">
-                            <input type="hidden" name="userId" value="<%= userId %>">
-                            <input type="hidden" name="name" value="<%= typeof userName !== 'undefined' ? userName : '' %>">
-                            <button type="submit" class="btn btn-danger">刪除</button>
-                        </form>
-                    </div>
-                </div>
-            <% } }); %>
-        </div>
-        <% } else if (selectedDay) { %>
-            <div class="empty-state">該日沒有記錄</div>
-        <% } %>
         <% } else { %>
             <div class="empty-state">沒有記錄</div>
         <% } %>

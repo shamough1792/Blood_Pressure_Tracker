@@ -51,21 +51,26 @@ router.get('/records', (req, res) => {
         const selectedMonth = req.query.yearMonth || (Object.keys(groupedRecords).length ? Object.keys(groupedRecords)[0] : null);
         const userName = req.query.name || '';
 
-        // Determine selected day: query param, or today (if current month), or first day with records
-        let selectedDay = parseInt(req.query.day) || null;
-        if (!selectedDay && selectedMonth) {
-            const now = new Date();
-            const [y, m] = selectedMonth.split('-').map(Number);
-            const isCurrentMonth = now.getFullYear() === y && now.getMonth() + 1 === m;
-            const monthRecords = groupedRecords[selectedMonth] || [];
-            if (isCurrentMonth && monthRecords.some(r => new Date(r.recorded_at).getDate() === now.getDate())) {
-                selectedDay = now.getDate();
-            } else if (monthRecords.length) {
-                selectedDay = new Date(monthRecords[0].recorded_at).getDate();
-            }
-        }
+        res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '', userId, userName });
+    });
+});
 
-        res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '', userId, userName, selectedDay });
+// 單日詳細記錄頁
+router.get('/records/day', (req, res) => {
+    const userId = req.query.userId || 1;
+    const date = req.query.date || '';
+    db.query('SELECT * FROM records WHERE user_id = ? AND DATE(recorded_at) = ? ORDER BY recorded_at ASC', [userId, date], (err, records) => {
+        if (err) throw err;
+        const userName = req.query.name || '';
+        const day = date ? new Date(`${date}T12:00:00`) : null;
+        res.render('day-detail', {
+            records,
+            date,
+            day,
+            titleSuffix: process.env.TITLE_SUFFIX || '',
+            userId,
+            userName
+        });
     });
 });
 

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title><%= date %> 詳細紀錄<%= userName ? ' (' + userName + ')' : '' %></title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container wide-detail">
+        <div class="top-nav center-title">
+            <a href="/records?yearMonth=<%= date.slice(0, 7) %>&userId=<%= userId %>&name=<%= encodeURIComponent(userName) %>" class="nav-btn">返回月曆</a>
+            <h1>每日詳細紀錄</h1>
+            <span></span>
+        </div>
+        <% if (day) { %>
+            <div class="day-detail-page-title"><%= day.getFullYear() %>年<%= day.getMonth() + 1 %>月<%= day.getDate() %>日</div>
+        <% } %>
+        <% if (records.length) { %>
+            <div class="day-detail">
+            <% records.forEach(function(r) {
+                var hp = parseInt(r.high_pressure), lp = parseInt(r.low_pressure);
+                var statusText = hp >= 140 || lp >= 90 ? '高血壓' : (hp < 90 || lp < 60 ? '低血壓' : '正常');
+                var statusClass = hp >= 140 || lp >= 90 ? 'bp-high' : (hp < 90 || lp < 60 ? 'bp-low' : 'bp-normal');
+                var period = new Date(r.recorded_at).getHours() < 12 ? '早' : '晚';
+            %>
+                <div class="day-record <%= hp >= 140 || lp >= 90 ? 'bp-high-border' : (hp < 90 || lp < 60 ? 'bp-low-border' : 'bp-normal-border') %>">
+                    <div class="day-record-head">
+                        <span class="day-period"><%= period %></span>
+                        <span class="day-values">
+                            <span class="dv-row"><span class="dv-label">高壓</span> <b class="val-box val-sys"><%= r.high_pressure %></b><span class="dv-label">低壓</span> <b class="val-box val-dia"><%= r.low_pressure %></b></span>
+                            <span class="dv-row"><span class="dv-label">心跳</span> <b class="val-box val-heart"><%= r.heartbeat %></b></span>
+                        </span>
+                        <span class="bp-status <%= statusClass %>" style="font-size:14px;padding:4px 12px;"><%= statusText %></span>
+                    </div>
+                    <div class="card-actions">
+                        <a href="/modify/<%= r.id %>?userId=<%= userId %>&name=<%= encodeURIComponent(userName) %>" class="btn btn-secondary">修改</a>
+                        <form action="/delete/<%= r.id %>" method="POST" style="display:inline;" onsubmit="return confirm('確定要刪除這條記錄嗎？');">
+                            <input type="hidden" name="userId" value="<%= userId %>"><input type="hidden" name="name" value="<%= userName %>">
+                            <button type="submit" class="btn btn-danger">刪除</button>
+                        </form>
+                    </div>
+                </div>
+            <% }); %>
+            </div>
+        <% } else { %>
+            <div class="empty-state">該日沒有記錄</div>
+        <% } %>
+    </div>
+</body>
+</html>

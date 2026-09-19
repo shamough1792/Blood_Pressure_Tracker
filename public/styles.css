@@ -421,6 +421,8 @@ body {
     border-radius: 50%;
     width: 52px;
     height: 52px;
+    flex: 0 0 52px;
+    box-sizing: border-box;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -446,7 +448,7 @@ body {
 
 .month-select {
     flex: 1 1 auto;
-    width: 100%;
+    width: auto;
     min-width: 0;
     font-size: 26px;
     font-weight: 700;
@@ -464,6 +466,11 @@ body {
     background-position: right 12px center;
     background-size: 16px 16px;
     outline: none;
+}
+
+/* 每日詳細頁在桌面使用較寬版面，避免內容只佔畫面上半中央 */
+.container.wide-detail {
+    max-width: 900px;
 }
 
 .month-select:focus {
@@ -660,6 +667,13 @@ body {
     font-size: 20px;
     color: #1a1a2e;
     margin-bottom: 12px;
+}
+
+.day-detail-page-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 8px 0 20px;
 }
 
 .day-record {
@@ -912,6 +926,10 @@ body {
 @media (max-width: 480px) {
     .container {
         padding: 12px;
+    }
+
+    .container.wide-detail {
+        max-width: 520px;
     }
 
     .step-title {
