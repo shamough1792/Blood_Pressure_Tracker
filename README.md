@@ -193,7 +193,11 @@ services:
 
 <br>
 
-![記錄頁（月曆檢視）](images/record.png)
+![記錄頁（月曆檢視，早晚狀態）](images/record.png)
+
+<br>
+
+![單日詳細紀錄頁](images/day-detail.png)
 
 <br>
 
