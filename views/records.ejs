@@ -81,6 +81,8 @@
             var firstWeekday = new Date(year, month - 1, 1).getDay();
             var daysInMonth = new Date(year, month, 0).getDate();
             var weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
+            var today = new Date();
+            var isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;
 
             function dayStatus(day) {
                 var d = dayMap[day];
@@ -130,8 +132,9 @@
                 <% for (var i = 0; i < firstWeekday; i++) { %><span class="cal-blank"></span><% } %>
                 <% for (var day = 1; day <= daysInMonth; day++) { %>
                     <% var wd = new Date(year, month - 1, day).getDay(); %>
+                    <% var isToday = isCurrentMonth && today.getDate() === day; %>
                     <a href="/records/day?date=<%= year %>-<%= String(month).padStart(2, '0') %>-<%= String(day).padStart(2, '0') %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>"
-                       class="cal-cell <%= dayStatus(day) %> period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %> period-pm-<%= periodStatus(dayMap[day] && dayMap[day]['晚']) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %>">
+                       class="cal-cell <%= dayStatus(day) %> period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %> period-pm-<%= periodStatus(dayMap[day] && dayMap[day]['晚']) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %> <%= isToday ? 'today' : '' %>">
                         <span class="cal-daynum"><%= day %></span>
                         <span class="cal-periods" aria-label="<%= dayMap[day] && dayMap[day]['早'] ? '早上已記錄' : '早上未記錄' %>，<%= dayMap[day] && dayMap[day]['晚'] ? '晚上已記錄' : '晚上未記錄' %>">
                             <span class="period-marker period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %>"><span class="period-label">早</span><span class="period-state"><%= dayMap[day] && dayMap[day]['早'] ? '✓' : '—' %></span></span>

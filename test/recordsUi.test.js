@@ -24,4 +24,6 @@ test('月曆日期格以早晚雙列呈現量測狀態', () => {
     assert.match(html, /period-marker period-pm-empty/);
     assert.match(html, />早<\/span>.*>✓<\/span>/s);
     assert.match(html, />晚<\/span>.*>—<\/span>/s);
+    assert.match(template, /var isCurrentMonth = today\.getFullYear\(\) === year/);
+    assert.match(template, /isToday \? 'today' : ''/);
 });

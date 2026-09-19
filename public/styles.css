@@ -584,6 +584,11 @@ body {
     outline-offset: -3px;
 }
 
+.cal-cell.today {
+    outline: 3px solid #f59e0b;
+    outline-offset: -3px;
+}
+
 .cal-daynum {
     font-size: 18px;
     font-weight: 700;
