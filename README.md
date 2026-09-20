@@ -2,7 +2,7 @@
 
 <br>
 
-[![Latest Release](https://img.shields.io/badge/version-v2.8.2-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.2)
+[![Latest Release](https://img.shields.io/badge/version-v2.8.3-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.3)
 [![Docker Image Version](https://img.shields.io/badge/docker-ghcr.io-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
 ![Node.js Version](https://img.shields.io/badge/node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
 ![MariaDB Version](https://img.shields.io/badge/mariadb-%3E%3D10.6-003545?style=flat&logo=mariadb)
@@ -20,7 +20,7 @@
 <br>
 
 - **多使用者 Portal** — 家庭成員獨立記錄，點擊大頭貼切換，管理後台管理使用者
-- **長者友善 4 步驟輸入** — 逐步輸入，日期時段自動填入
+- **長者友善 4 步驟輸入** — 逐步輸入，預設保留實際錄入時間，也可補錄時指定上午或下午
 - **月曆檢視 + 統計圖表** — 全月記錄一目了然，趨勢圖可放大
 - **血壓分級顏色** — 正常綠 / 低血壓藍 / 高血壓紅，全介面統一標示
 - **Excel 匯出 + SQL 備份** — 日曆格式報表、完整資料庫備份
@@ -238,6 +238,7 @@ services:
 * **2.8.0** — 新增單日詳細紀錄頁，改善月曆日期導覽及桌面版面配置
 * **2.8.1** — 修正內網 HTTP 管理員登入 cookie 無法保存問題
 * **2.8.2** — 月曆以特殊外框標示當天日期
+* **2.8.3** — 優化首頁與手機版版面、改善月曆與卡片顯示、修正記錄時間保留及補錄時段選擇、更新 GHCR Docker image
 
 <br>
 
