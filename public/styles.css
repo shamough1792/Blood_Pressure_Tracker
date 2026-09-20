@@ -166,6 +166,20 @@ body {
     box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.15);
 }
 
+.step-input.input-error {
+    border-color: #c62828;
+    box-shadow: 0 0 0 4px rgba(198, 40, 40, 0.12);
+}
+
+.field-error {
+    min-height: 24px;
+    margin-top: 8px;
+    color: #b71c1c;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+}
+
 /* 隱藏 number input 的上下箭頭 */
 .step-input::-webkit-outer-spin-button,
 .step-input::-webkit-inner-spin-button {
@@ -559,7 +573,7 @@ body {
     text-decoration: none;
     background: #f7f9fc;
     transition: transform 0.15s;
-    overflow: hidden;
+    overflow: visible;
     white-space: nowrap;
 }
 
@@ -587,9 +601,11 @@ body {
 .cal-cell.today {
     outline: 3px solid #f59e0b;
     outline-offset: -3px;
+    box-shadow: inset 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
 
 .cal-daynum {
+    position: relative;
     font-size: 18px;
     font-weight: 700;
     color: #333;
@@ -601,6 +617,21 @@ body {
     align-items: center;
     justify-content: center;
     box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.cal-today-badge {
+    position: absolute;
+    top: -9px;
+    right: -14px;
+    min-width: 20px;
+    padding: 2px 4px;
+    border-radius: 8px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 10px;
+    line-height: 1.1;
+    font-weight: 800;
+    z-index: 2;
 }
 
 .cal-cell.sat .cal-daynum,
@@ -679,6 +710,33 @@ body {
     font-size: 24px;
     font-weight: 700;
     margin: 8px 0 20px;
+}
+
+.empty-state {
+    padding: 48px 20px;
+    text-align: center;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.empty-state-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.empty-state-sub {
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.empty-state-action {
+    margin-top: 20px;
+    max-width: 220px;
+    font-size: 18px;
 }
 
 .day-record {
@@ -1060,7 +1118,7 @@ body {
     justify-content: center;
     padding: 40px 0;
     flex: 1;
-    align-content: center;
+    align-content: flex-start;
 }
 
 .user-card {
@@ -1290,6 +1348,11 @@ body {
     .admin-container { padding: 12px; }
     .admin-card { padding: 16px; }
     .form-inline .form-group { min-width: 100%; }
+
+    .user-grid {
+        gap: 12px;
+        padding-top: 8px;
+    }
 }
 
 /* --- 統計頁 --- */
@@ -1544,11 +1607,73 @@ body {
 @media (max-width: 480px) {
     .health-overview { grid-template-columns: 1fr; }
     .latest-reading, .recent-status { padding: 14px; }
-    .stat-cards { gap: 8px; }
+    .stat-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .stat-card { padding: 10px 6px; }
     .stat-label { font-size: 12px; margin-bottom: 6px; }
     .stat-value { min-width: 48px; padding: 6px 10px; font-size: 22px; }
     .chart-card { padding: 12px; }
     .chart-card h3 { font-size: 17px; margin-bottom: 8px; }
     .chart-wrap { height: 180px; }
+
+    .calendar { padding: 8px; }
+    .cal-grid { gap: 3px; }
+    .cal-cell { min-height: 56px; padding: 4px 1px; border-radius: 7px; }
+    .cal-daynum { width: 23px; height: 23px; font-size: 16px; }
+    .period-marker { width: 28px; min-width: 28px; padding: 2px; font-size: 9px; }
+    .period-state { font-size: 10px; }
+    .calendar-legend { gap: 4px 6px; font-size: 11px; }
+    .calendar-legend span { padding: 3px 5px; }
+
+    .stats-nav-btn { margin-bottom: 12px; }
+}
+
+@media (min-width: 481px) {
+    .portal-wrap .user-grid { padding-top: 8px; }
+}
+
+.portal-content .user-grid {
+    flex: 0 0 auto;
+    padding-top: 0;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    max-height: none;
+    overflow: visible;
+    transform: translateY(-25%);
+}
+
+/* 標題與使用者卡片獨立定位，調整其中一者不會牽動另一者 */
+.portal-content {
+    position: relative;
+    display: block;
+    flex: 1;
+}
+
+.portal-header {
+    position: absolute;
+    top: clamp(32px, 9vh, 104px);
+    left: 0;
+    right: 0;
+    margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+    .portal-content .user-grid {
+        top: 48%;
+        max-height: none;
+        transform: translateY(-25%);
+    }
+
+    .portal-header {
+        top: 32px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
 }

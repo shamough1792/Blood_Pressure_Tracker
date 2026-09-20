@@ -135,7 +135,7 @@
                     <% var isToday = isCurrentMonth && today.getDate() === day; %>
                     <a href="/records/day?date=<%= year %>-<%= String(month).padStart(2, '0') %>-<%= String(day).padStart(2, '0') %>&userId=<%= userId %>&name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>"
                        class="cal-cell <%= dayStatus(day) %> period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %> period-pm-<%= periodStatus(dayMap[day] && dayMap[day]['晚']) %> <%= wd === 0 ? 'sun' : (wd === 6 ? 'sat' : '') %> <%= isToday ? 'today' : '' %>">
-                        <span class="cal-daynum"><%= day %></span>
+                        <span class="cal-daynum"><%= day %><% if (isToday) { %><span class="cal-today-badge">今</span><% } %></span>
                         <span class="cal-periods" aria-label="<%= dayMap[day] && dayMap[day]['早'] ? '早上已記錄' : '早上未記錄' %>，<%= dayMap[day] && dayMap[day]['晚'] ? '晚上已記錄' : '晚上未記錄' %>">
                             <span class="period-marker period-am-<%= periodStatus(dayMap[day] && dayMap[day]['早']) %>"><span class="period-label">早</span><span class="period-state"><%= dayMap[day] && dayMap[day]['早'] ? '✓' : '—' %></span></span>
                             <span class="period-marker period-pm-<%= periodStatus(dayMap[day] && dayMap[day]['晚']) %>"><span class="period-label">晚</span><span class="period-state"><%= dayMap[day] && dayMap[day]['晚'] ? '✓' : '—' %></span></span>
@@ -146,7 +146,11 @@
         </div>
 
         <% } else { %>
-            <div class="empty-state">沒有記錄</div>
+                <div class="empty-state">
+                    <div class="empty-state-title">尚未有血壓記錄</div>
+                    <div class="empty-state-sub">新增第一筆記錄後，這裡會顯示月曆與早晚狀態。</div>
+                    <a class="btn btn-primary empty-state-action" href="/bp/<%= userId %>?name=<%= encodeURIComponent(typeof userName !== 'undefined' ? userName : '') %>">新增記錄</a>
+                </div>
         <% } %>
     </div>
     <script>

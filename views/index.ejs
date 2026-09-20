@@ -42,7 +42,8 @@
             <div class="step active" id="step-1">
                 <div class="step-title">高壓是多少？</div>
                 <input type="number" class="step-input" id="highPressure" name="high_pressure"
-                       placeholder="___" inputmode="numeric" min="50" max="250" autofocus>
+                       placeholder="___" inputmode="numeric" min="50" max="250" aria-describedby="highPressureError" autofocus>
+                <div class="field-error" id="highPressureError" role="alert" aria-live="polite"></div>
                 <div class="step-actions">
                     <button type="button" class="btn btn-primary" onclick="goStep(2)">下一步 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
                 </div>
@@ -53,7 +54,8 @@
                 <button type="button" class="back-link" onclick="goStep(1)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
                 <div class="step-title">低壓是多少？</div>
                 <input type="number" class="step-input" id="lowPressure" name="low_pressure"
-                       placeholder="___" inputmode="numeric" min="30" max="150">
+                       placeholder="___" inputmode="numeric" min="30" max="150" aria-describedby="lowPressureError">
+                <div class="field-error" id="lowPressureError" role="alert" aria-live="polite"></div>
                 <div class="step-actions">
                     <button type="button" class="btn btn-primary" onclick="goStep(3)">下一步 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
                 </div>
@@ -64,7 +66,8 @@
                 <button type="button" class="back-link" onclick="goStep(2)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
                 <div class="step-title">心跳是多少？</div>
                 <input type="number" class="step-input" id="heartbeat" name="heartbeat"
-                       placeholder="___" inputmode="numeric" min="30" max="200">
+                       placeholder="___" inputmode="numeric" min="30" max="200" aria-describedby="heartbeatError">
+                <div class="field-error" id="heartbeatError" role="alert" aria-live="polite"></div>
                 <div class="step-actions">
                     <button type="button" class="btn btn-primary" onclick="goStep(4)">下一步 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
                 </div>
@@ -106,7 +109,8 @@
                     <label for="editDate">日期</label>
                     <input type="date" id="editDate">
                     <label for="editPeriod">時段</label>
-                    <select id="editPeriod">
+                    <select id="editPeriod" class="historical-period">
+                        <option value="">自動（目前時間）</option>
                         <option value="AM">上午</option>
                         <option value="PM">下午</option>
                     </select>
@@ -139,8 +143,7 @@
             const d = String(now.getDate()).padStart(2, '0');
             document.getElementById('recordDate').value = y + '-' + mo + '-' + d;
 
-            const hour = now.getHours();
-            document.getElementById('timeOfDay').value = hour >= 12 ? 'PM' : 'AM';
+            document.getElementById('timeOfDay').value = '';
         });
 
         function goStep(n) {
@@ -188,19 +191,40 @@
             const val = parseInt(el.value);
 
             if (!val || isNaN(val)) {
-                alert('請輸入' + field.name);
+                showFieldError(field.id, '請輸入' + field.name);
                 el.focus();
                 return false;
             }
 
             if (val < field.min || val > field.max) {
-                alert(field.name + '範圍應在 ' + field.min + ' ~ ' + field.max + ' 之間');
+                showFieldError(field.id, field.name + '範圍應在 ' + field.min + ' ~ ' + field.max + ' 之間');
                 el.focus();
                 return false;
             }
 
+            clearFieldError(field.id);
             return true;
         }
+
+        function showFieldError(fieldId, message) {
+            const input = document.getElementById(fieldId);
+            const error = document.getElementById(fieldId + 'Error');
+            if (input) input.classList.add('input-error');
+            if (error) error.textContent = message;
+        }
+
+        function clearFieldError(fieldId) {
+            const input = document.getElementById(fieldId);
+            const error = document.getElementById(fieldId + 'Error');
+            if (input) input.classList.remove('input-error');
+            if (error) error.textContent = '';
+        }
+
+        ['highPressure', 'lowPressure', 'heartbeat'].forEach(function(fieldId) {
+            document.getElementById(fieldId).addEventListener('input', function() {
+                clearFieldError(fieldId);
+            });
+        });
 
         function updateConfirm() {
             const high = document.getElementById('highPressure').value;
@@ -220,7 +244,8 @@
                     d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 (' + weekdays[d.getDay()] + ')';
             }
 
-            const isPM = document.getElementById('timeOfDay').value === 'PM';
+            const selectedPeriod = document.getElementById('timeOfDay').value;
+            const isPM = selectedPeriod ? selectedPeriod === 'PM' : new Date().getHours() >= 12;
             document.getElementById('confirmPeriod').textContent = isPM ? '下午' : '上午';
 
             // 血壓分級
@@ -250,12 +275,12 @@
             const isOpen = editor.classList.contains('show');
             if (isOpen) {
                 editor.classList.remove('show');
-            } else {
-                // 同步編輯器與隱藏欄位的值
-                document.getElementById('editDate').value = document.getElementById('recordDate').value;
-                document.getElementById('editPeriod').value = document.getElementById('timeOfDay').value;
-                editor.classList.add('show');
-            }
+                } else {
+                    // 同步編輯器與隱藏欄位的值
+                    document.getElementById('editDate').value = document.getElementById('recordDate').value;
+                    document.getElementById('editPeriod').value = document.getElementById('timeOfDay').value;
+                    editor.classList.add('show');
+                }
         }
 
         // 編輯器變更時同步到隱藏欄位並更新確認頁
@@ -268,16 +293,17 @@
                 document.getElementById('timeOfDay').value = e.target.value;
                 if (currentStep === 4) updateConfirm();
             }
-        });
+            });
 
         // 表單提交 - AJAX 避免頁面跳轉
         document.getElementById('bpForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const form = this;
-            const date = document.getElementById('recordDate').value;
-            const period = document.getElementById('timeOfDay').value;
-            const userId = form.querySelector('input[name="user_id"]').value;
+                const form = this;
+                const date = document.getElementById('recordDate').value;
+                    const selectedPeriod = document.getElementById('timeOfDay').value;
+                    const period = selectedPeriod || (new Date().getHours() >= 12 ? 'PM' : 'AM');
+                    const userId = form.querySelector('input[name="user_id"]').value;
 
             // 檢查同日同時段已有記錄
             fetch('/api/check-duplicate?userId=' + encodeURIComponent(userId) + '&date=' + encodeURIComponent(date) + '&period=' + encodeURIComponent(period))
@@ -334,8 +360,7 @@
             const mo = String(now.getMonth() + 1).padStart(2, '0');
             const d = String(now.getDate()).padStart(2, '0');
             document.getElementById('recordDate').value = y + '-' + mo + '-' + d;
-            const hour = now.getHours();
-            document.getElementById('timeOfDay').value = hour >= 12 ? 'PM' : 'AM';
+            document.getElementById('timeOfDay').value = '';
 
             // 重置到步驟 1
             currentStep = 0;

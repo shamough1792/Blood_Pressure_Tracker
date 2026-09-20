@@ -4,6 +4,7 @@ const path = require('path');
 const db = require('../db');
 const { buildExcel } = require('../lib/excel');
 const { formatDateForFilename } = require('../lib/util');
+const { buildRecordedAt } = require('../lib/record-time');
 const router = express.Router();
 
 // 血壓輸入驗證：合理範圍內先接受，防垃圾值入庫
@@ -18,18 +19,9 @@ function validateBp(hp, lp, heart) {
     return null;
 }
 
-// 早/晚固定時間（設計取捨：只保留早晚語意）
+// 保留實際錄入時間，早/晚只用於分類與重複檢查
 function toRecordedAt(record_date, time_of_day) {
-    const now = new Date();
-    const y = now.getFullYear();
-    const mo = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    const date = record_date || `${y}-${mo}-${d}`;
-    const hour = now.getHours();
-    const isPM = time_of_day === 'PM' || (time_of_day !== 'AM' && hour >= 12);
-    return isPM
-        ? new Date(`${date}T20:00:00`)
-        : new Date(`${date}T08:00:00`);
+    return buildRecordedAt(record_date, time_of_day);
 }
 
 // API: 檢查同日同時段有冇已有記錄
