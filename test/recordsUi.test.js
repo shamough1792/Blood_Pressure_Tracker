@@ -27,3 +27,23 @@ test('月曆日期格以早晚雙列呈現量測狀態', () => {
     assert.match(template, /var isCurrentMonth = today\.getFullYear\(\) === year/);
     assert.match(template, /isToday \? 'today' : ''/);
 });
+
+test('月曆今日日期顯示文字提示', () => {
+    const template = fs.readFileSync('views/records.ejs', 'utf8');
+    assert.match(template, /class="cal-today-badge"/);
+    assert.match(template, />今<\/span>/);
+});
+
+test('沒有記錄時提供清楚的空白狀態與新增入口', () => {
+    const template = fs.readFileSync('views/records.ejs', 'utf8');
+    const html = ejs.render(template, {
+        userId: 1,
+        userName: '王伯伯',
+        titleSuffix: '',
+        groupedRecords: {},
+        selectedMonth: ''
+    });
+
+    assert.match(html, /尚未有血壓記錄/);
+    assert.match(html, /href="\/bp\/1\?name=/);
+});
