@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { version: appVersion } = require('../package.json');
 const { formatDateForFilename } = require('../lib/util');
 const { createSessionToken, COOKIE_NAME } = require('../middleware/adminAuth');
 
@@ -13,6 +14,13 @@ function isHttpsRequest(req) {
 
 module.exports = function createAdminRouter(adminAuth) {
     const router = express.Router();
+    const validColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+    const validId = value => /^\d+$/.test(String(value)) && Number(value) > 0;
+
+    router.use((req, res, next) => {
+        res.locals.appVersion = appVersion;
+        next();
+    });
 
     // 未登入：頁面導向登入頁；API 回傳 401 JSON
     function requireAdmin(req, res, next) {
@@ -57,13 +65,51 @@ module.exports = function createAdminRouter(adminAuth) {
     // 其餘所有管理路由（含 /api/*）需登入
     router.use(requireAdmin);
 
-    // 管理後台
+    function loadAdminSummary(callback) {
+        db.query('SELECT COUNT(*) AS total_records, SUM(recorded_at >= CURDATE()) AS today_records FROM records', callback);
+    }
+
+    // 管理總覽
     router.get('/admin', (req, res) => {
-    db.query('SELECT * FROM users ORDER BY id ASC', (err, users) => {
-        if (err) throw err;
-        res.render('admin', { users, titleSuffix: process.env.TITLE_SUFFIX || '' });
+        const usersSql = 'SELECT u.id, u.name, u.color, u.created_at, COUNT(r.id) AS record_count, MAX(r.recorded_at) AS last_recorded_at FROM users u LEFT JOIN records r ON r.user_id = u.id GROUP BY u.id, u.name, u.color, u.created_at ORDER BY u.id ASC';
+        db.query(usersSql, (err, users) => {
+            if (err) return res.status(500).send('讀取使用者資料失敗');
+            loadAdminSummary((summaryErr, summaryRows) => {
+                if (summaryErr) return res.status(500).send('讀取統計資料失敗');
+                const summary = summaryRows[0] || { total_records: 0, today_records: 0 };
+                res.render('admin', { pageTitle: '管理總覽', pageDescription: '快速查看使用者與血壓記錄的整體狀況。', activePage: 'overview', summary: { totalUsers: users.length, totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, titleSuffix: process.env.TITLE_SUFFIX || '' });
+            });
+        });
     });
-});
+
+    router.get('/admin/users', (req, res) => {
+        const usersSql = 'SELECT u.id, u.name, u.color, u.created_at, COUNT(r.id) AS record_count, MAX(r.recorded_at) AS last_recorded_at FROM users u LEFT JOIN records r ON r.user_id = u.id GROUP BY u.id, u.name, u.color, u.created_at ORDER BY u.id ASC';
+        db.query(usersSql, (err, users) => {
+            if (err) return res.status(500).send('讀取使用者資料失敗');
+            res.render('admin-users', { users, pageTitle: '使用者管理', pageDescription: '管理家庭成員帳號、識別色與使用者資料。', activePage: 'users', titleSuffix: process.env.TITLE_SUFFIX || '' });
+        });
+    });
+
+    router.get('/admin/records', (req, res) => {
+        db.query('SELECT id, name, color FROM users ORDER BY id ASC', (userErr, users) => {
+            if (userErr) return res.status(500).send('讀取使用者資料失敗');
+            db.query('SELECT r.id, r.high_pressure, r.low_pressure, r.heartbeat, r.recorded_at, r.user_id, u.name AS user_name FROM records r LEFT JOIN users u ON u.id = r.user_id ORDER BY r.recorded_at DESC LIMIT 200', (recordErr, records) => {
+                if (recordErr) return res.status(500).send('讀取血壓記錄失敗');
+                loadAdminSummary((summaryErr, summaryRows) => {
+                    if (summaryErr) return res.status(500).send('讀取統計資料失敗');
+                    const summary = summaryRows[0] || { total_records: 0, today_records: 0 };
+                    res.render('admin-records', { users, records, summary: { totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, pageTitle: '血壓記錄', pageDescription: '查看最近 200 筆量測資料，並依使用者快速篩選。', activePage: 'records', titleSuffix: process.env.TITLE_SUFFIX || '' });
+                });
+            });
+        });
+    });
+
+    router.get('/admin/backup', (req, res) => {
+        db.query('SELECT id, name FROM users ORDER BY id ASC', (err, users) => {
+            if (err) return res.status(500).send('讀取使用者資料失敗');
+            res.render('admin-backup', { users, pageTitle: '備份還原', pageDescription: '下載完整資料備份，或將 SQL 記錄匯入指定使用者。', activePage: 'backup', titleSuffix: process.env.TITLE_SUFFIX || '' });
+        });
+    });
 
 // SQL 匯出（備份）
 router.get('/admin/export/sql', (req, res) => {
@@ -130,21 +176,26 @@ router.get('/api/users', (req, res) => {
 
 // API: 新增使用者
 router.post('/api/users', (req, res) => {
-    const { name, color } = req.body;
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+    const color = req.body.color || '#4CAF50';
     if (!name) return res.status(400).json({ error: '請輸入名稱' });
-    db.query('INSERT INTO users (name, color) VALUES (?, ?)', [name, color || '#4CAF50'], (err, result) => {
+    if (name.length > 50) return res.status(400).json({ error: '名稱不可超過 50 個字元' });
+    if (!validColor(color)) return res.status(400).json({ error: '顏色格式無效' });
+    db.query('INSERT INTO users (name, color) VALUES (?, ?)', [name, color], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: result.insertId, name, color: color || '#4CAF50' });
+        res.json({ id: result.insertId, name, color });
     });
 });
 
 // API: 刪除使用者（連同記錄）
 router.delete('/api/users/:id', (req, res) => {
     const userId = req.params.id;
+    if (!validId(userId)) return res.status(400).json({ error: '使用者編號無效' });
     db.query('DELETE FROM records WHERE user_id = ?', [userId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        db.query('DELETE FROM users WHERE id = ?', [userId], (err) => {
+        db.query('DELETE FROM users WHERE id = ?', [userId], (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
+            if (!result.affectedRows) return res.status(404).json({ error: '找不到使用者' });
             res.json({ success: true });
         });
     });
@@ -153,7 +204,12 @@ router.delete('/api/users/:id', (req, res) => {
 // API: 編輯使用者
 router.put('/api/users/:id', (req, res) => {
     const userId = req.params.id;
-    const { name, color } = req.body;
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+    const { color } = req.body;
+    if (!validId(userId)) return res.status(400).json({ error: '使用者編號無效' });
+    if (!name) return res.status(400).json({ error: '請輸入名稱' });
+    if (name.length > 50) return res.status(400).json({ error: '名稱不可超過 50 個字元' });
+    if (!validColor(color)) return res.status(400).json({ error: '顏色格式無效' });
     db.query('UPDATE users SET name = ?, color = ? WHERE id = ?', [name, color, userId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
