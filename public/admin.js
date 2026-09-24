@@ -32,11 +32,18 @@
     const userSearch = byId('userSearch');
     if (userSearch) userSearch.addEventListener('input', () => {
         const search = userSearch.value.trim().toLocaleLowerCase();
-        document.querySelectorAll('#userTableBody tr[data-user-name]').forEach(row => { row.hidden = !row.dataset.userName.toLocaleLowerCase().includes(search); });
+        const rows = [...document.querySelectorAll('#userTableBody tr[data-user-name]')];
+        const visible = rows.filter(row => row.dataset.userName.toLocaleLowerCase().includes(search));
+        rows.forEach(row => { row.hidden = !visible.includes(row); });
+        const summary = byId('userSearchSummary');
+        const empty = byId('userSearchEmpty');
+        if (summary) summary.textContent = search ? `符合搜尋：${visible.length} 位使用者` : `${rows.length} 位使用者`;
+        if (empty) empty.hidden = !search || visible.length > 0;
     });
 
     const editModal = byId('editModal');
-    function closeEdit() { if (editModal) editModal.style.display = 'none'; }
+    let editTrigger = null;
+    function closeEdit() { if (editModal) editModal.style.display = 'none'; if (editTrigger) { editTrigger.focus(); editTrigger = null; } }
     if (editModal) {
         editModal.addEventListener('click', event => { if (event.target === editModal) closeEdit(); });
         document.addEventListener('keydown', event => { if (event.key === 'Escape') closeEdit(); });
@@ -55,6 +62,7 @@
         if (!button) return;
         const { action, id, name, color } = button.dataset;
         if (action === 'edit-user') {
+            editTrigger = button;
             byId('editId').value = id; byId('editName').value = name; byId('editColor').value = color;
             editModal.style.display = 'flex'; byId('editName').focus();
         }
