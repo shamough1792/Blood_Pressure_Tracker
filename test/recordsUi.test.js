@@ -47,3 +47,21 @@ test('沒有記錄時提供清楚的空白狀態與新增入口', () => {
     assert.match(html, /尚未有血壓記錄/);
     assert.match(html, /href="\/bp\/1\?name=/);
 });
+
+test('管理後台血壓記錄提供多條件篩選欄位', async () => {
+    const template = fs.readFileSync('views/admin-records.ejs', 'utf8');
+    const html = await ejs.renderFile('views/admin-records.ejs', {
+        users: [{ id: 1, name: '王伯伯', color: '#4CAF50' }],
+        records: [{ id: 1, user_id: 1, high_pressure: 145, low_pressure: 92, heartbeat: 80, recorded_at: new Date('2026-09-24T10:00:00'), user_name: '王伯伯' }],
+        recordsTotal: 1, recordsPage: 1, recordsPageSize: 50,
+        recordFilters: { userId: '', from: '', to: '', status: '', sort: 'newest' },
+        summary: { totalRecords: 1, todayRecords: 1 },
+        pageTitle: '血壓記錄', pageDescription: '', activePage: 'records', titleSuffix: '', appVersion: '2.8.6'
+    });
+
+    assert.match(template, /recordFromFilter/);
+    assert.match(template, /recordToFilter/);
+    assert.match(template, /recordStatusFilter/);
+    assert.match(template, /recordFilterReset/);
+    assert.match(html, /data-status="high"/);
+});

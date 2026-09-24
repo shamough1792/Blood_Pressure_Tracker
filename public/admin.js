@@ -66,9 +66,42 @@
     });
 
     const recordUserFilter = byId('recordUserFilter');
-    if (recordUserFilter) recordUserFilter.addEventListener('change', () => {
-        document.querySelectorAll('#recordTableBody tr[data-user-id]').forEach(row => { row.hidden = recordUserFilter.value !== '' && row.dataset.userId !== recordUserFilter.value; });
-    });
+    const recordFromFilter = byId('recordFromFilter');
+    const recordToFilter = byId('recordToFilter');
+    const recordStatusFilter = byId('recordStatusFilter');
+    const recordSortFilter = byId('recordSortFilter');
+    const recordFilterSummary = byId('recordFilterSummary');
+    const recordFilterEmpty = byId('recordFilterEmpty');
+    const recordTableBody = byId('recordTableBody');
+    const recordFilterReset = byId('recordFilterReset');
+    if (recordTableBody && recordUserFilter) {
+        const rows = [...recordTableBody.querySelectorAll('tr[data-user-id]')];
+        const applyRecordFilters = () => {
+            const from = recordFromFilter.value ? new Date(recordFromFilter.value + 'T00:00:00') : null;
+            const to = recordToFilter.value ? new Date(recordToFilter.value + 'T23:59:59.999') : null;
+            const user = recordUserFilter.value;
+            const status = recordStatusFilter.value;
+            const visibleRows = rows.filter(row => {
+                const recordedAt = new Date(row.dataset.recordedAt);
+                return (!user || row.dataset.userId === user)
+                    && (!from || recordedAt >= from)
+                    && (!to || recordedAt <= to)
+                    && (!status || row.dataset.status === status);
+            });
+            rows.forEach(row => { row.hidden = !visibleRows.includes(row); });
+            visibleRows.sort((a, b) => {
+                const difference = new Date(a.dataset.recordedAt) - new Date(b.dataset.recordedAt);
+                return recordSortFilter.value === 'oldest' ? difference : -difference;
+            }).forEach(row => recordTableBody.appendChild(row));
+            recordFilterSummary.textContent = `符合條件：${visibleRows.length} 筆`;
+            recordFilterEmpty.hidden = rows.length === 0 || visibleRows.length > 0;
+        };
+        [recordUserFilter, recordFromFilter, recordToFilter, recordStatusFilter, recordSortFilter].forEach(control => control.addEventListener('change', applyRecordFilters));
+        recordFilterReset.addEventListener('click', () => {
+            recordUserFilter.value = ''; recordFromFilter.value = ''; recordToFilter.value = ''; recordStatusFilter.value = ''; recordSortFilter.value = 'newest'; applyRecordFilters();
+        });
+        applyRecordFilters();
+    }
 
     const importForm = byId('importForm');
     if (importForm) importForm.addEventListener('submit', async event => {
