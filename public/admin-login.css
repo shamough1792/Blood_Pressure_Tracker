@@ -25,7 +25,7 @@
 .admin-login-submit:active{transform:translateY(0)}
 .admin-login-submit:focus-visible,.admin-login-back:focus-visible{outline:3px solid #76b98e;outline-offset:3px}
 .login-error{margin:0 0 20px;padding:12px 14px;border:1px solid #f3b8b8;border-radius:8px;background:#fff5f5;color:#b42318;font-size:14px;line-height:1.5}
-.admin-login-back{display:block;width:max-content;margin:22px auto 0;color:#667085;font-size:13px;text-decoration:none}
-.admin-login-back:hover{color:#2d6a4f;text-decoration:underline}
+.admin-login-back{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin:14px auto 0;border:1px solid #d0d5dd;border-radius:8px;background:#fff;color:#475467;font-size:14px;font-weight:750;text-decoration:none;transition:border-color .15s,background .15s,color .15s}
+.admin-login-back:hover{border-color:#9ac9aa;background:#f4faf6;color:#24563f}
 @media(max-width:720px){.admin-login-shell{display:block;min-height:100vh}.admin-login-intro{min-height:235px;padding:26px 24px 24px}.admin-login-intro-copy{margin:36px 0 0}.admin-login-intro h1{font-size:30px}.admin-login-intro-copy>p:last-child{margin-top:10px;font-size:14px;line-height:1.5}.admin-login-intro-footer{display:none}.admin-login-panel{align-items:flex-start;padding:34px 24px 44px}.admin-login-heading h2{font-size:28px}}
 @media(max-width:400px){.admin-login-intro{min-height:215px}.admin-login-panel{padding:28px 18px 36px}}
