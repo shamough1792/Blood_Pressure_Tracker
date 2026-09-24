@@ -129,6 +129,22 @@
                 hiddenLinks[0].before(gap);
             }
         }
+        if (activeIndex >= 0) {
+            const makePagerLink = (link, label, ariaLabel) => {
+                if (!link) return null;
+                const pager = document.createElement('a');
+                pager.className = 'btn-sm btn-sm-reset admin-pagination-arrow';
+                pager.href = link.href;
+                pager.setAttribute('aria-label', ariaLabel);
+                pager.title = ariaLabel;
+                pager.textContent = label;
+                return pager;
+            };
+            const previous = makePagerLink(pageLinks[activeIndex - 1], '‹', '上一頁');
+            const next = makePagerLink(pageLinks[activeIndex + 1], '›', '下一頁');
+            if (previous) pagination.prepend(previous);
+            if (next) pagination.append(next);
+        }
     }
 
     const importForm = byId('importForm');
