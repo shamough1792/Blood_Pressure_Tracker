@@ -115,9 +115,10 @@
     if (pagination) {
         const pageLinks = [...pagination.querySelectorAll('a')].filter(link => /^\d+$/.test(link.textContent.trim()));
         const currentIndex = pageLinks.findIndex(link => link.getAttribute('aria-current') === 'page');
-        if (pageLinks.length > 9 && currentIndex >= 0) {
+        const activeIndex = currentIndex >= 0 ? currentIndex : Math.max(0, pageLinks.findIndex(link => new URL(link.href).searchParams.get('page') === new URLSearchParams(window.location.search).get('page')));
+        if (pageLinks.length > 9 && activeIndex >= 0) {
             pageLinks.forEach((link, index) => {
-                if (index !== 0 && index !== pageLinks.length - 1 && Math.abs(index - currentIndex) > 2) link.hidden = true;
+                if (index !== 0 && index !== pageLinks.length - 1 && Math.abs(index - activeIndex) > 2) link.hidden = true;
             });
             const hiddenLinks = pageLinks.filter(link => link.hidden);
             if (hiddenLinks.length) {
