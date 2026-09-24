@@ -2,7 +2,7 @@
 
 <br>
 
-[![Latest Release](https://img.shields.io/badge/version-v2.8.6-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.6)
+[![Latest Release](https://img.shields.io/badge/version-v2.8.7-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.7)
 [![Docker Image Version](https://img.shields.io/badge/docker-ghcr.io-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
 ![Node.js Version](https://img.shields.io/badge/node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
 ![MariaDB Version](https://img.shields.io/badge/mariadb-%3E%3D10.6-003545?style=flat&logo=mariadb)
@@ -245,6 +245,7 @@ services:
 * **2.8.3** — 優化首頁與手機版版面、改善月曆與卡片顯示、修正記錄時間保留及補錄時段選擇
 * **2.8.4** — 後台版本號同步 package.json，更新 GitHub Release 與 Docker image
 * **2.8.5** — 美化管理員登入頁，改善登入表單與手機版面
+* **2.8.7** — 優化管理後台分頁、篩選與操作體驗，加入前後頁導覽
 * **2.8.6** — 修正後台今日記錄說明，明確標示以伺服器日期計算
 
 <br>
