@@ -114,8 +114,16 @@ CREATE TABLE records (
     heartbeat INT NOT NULL,
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_id INT NOT NULL DEFAULT 1,
+    INDEX idx_records_user_recorded_at (user_id, recorded_at),
+    INDEX idx_records_recorded_at (recorded_at),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+```
+
+既有資料庫升級時，請執行索引 migration：
+
+```bash
+mysql -h <DB_HOST> -u <DB_USER> -p <DB_NAME> < mariadb/migration-002-add-record-indexes.sql
 ```
 
 #### 環境變數

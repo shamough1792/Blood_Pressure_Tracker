@@ -55,8 +55,9 @@ test('管理後台血壓記錄提供多條件篩選欄位', async () => {
         records: [{ id: 1, user_id: 1, high_pressure: 145, low_pressure: 92, heartbeat: 80, recorded_at: new Date('2026-09-24T10:00:00'), user_name: '王伯伯' }],
         recordsTotal: 1, recordsPage: 1, recordsPageSize: 50,
         recordFilters: { userId: '', from: '', to: '', status: '', sort: 'newest' },
+        paginationItems: [1],
         summary: { totalRecords: 1, todayRecords: 1 },
-        pageTitle: '血壓記錄', pageDescription: '', activePage: 'records', titleSuffix: '', appVersion: '2.8.6'
+        pageTitle: '血壓記錄', pageDescription: '', activePage: 'records', titleSuffix: '', appVersion: '2.8.7', csrfToken: 'token'
     });
 
     assert.match(template, /recordFromFilter/);
@@ -64,4 +65,20 @@ test('管理後台血壓記錄提供多條件篩選欄位', async () => {
     assert.match(template, /recordStatusFilter/);
     assert.match(template, /recordFilterReset/);
     assert.match(html, /data-status="high"/);
+});
+
+test('管理後台分頁由伺服器輸出精簡頁碼與前後頁', async () => {
+    const html = await ejs.renderFile('views/admin-records.ejs', {
+        users: [], records: [], recordsTotal: 2050, recordsPage: 20, recordsPageSize: 50,
+        recordFilters: { userId: '', from: '', to: '', status: '', sort: 'newest' },
+        paginationItems: [1, 'ellipsis', 18, 19, 20, 21, 22, 'ellipsis', 41],
+        summary: { totalRecords: 2050, todayRecords: 0 },
+        pageTitle: '血壓記錄', pageDescription: '', activePage: 'records', titleSuffix: '', appVersion: '2.8.7', csrfToken: 'token'
+    });
+
+    assert.match(html, /aria-label="上一頁"/);
+    assert.match(html, /aria-label="下一頁"/);
+    assert.match(html, /aria-current="page"[^>]*>20<\/a>/);
+    assert.equal((html.match(/admin-pagination-gap/g) || []).length, 2);
+    assert.doesNotMatch(html, />17<\/a>/);
 });

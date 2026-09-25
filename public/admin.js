@@ -1,7 +1,10 @@
 (function () {
     const byId = id => document.getElementById(id);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     async function api(url, options) {
+        options = options || {};
+        options.headers = { ...(options.headers || {}), 'X-CSRF-Token': csrfToken };
         const response = await fetch(url, options);
         if (response.status === 401) {
             window.location.replace('/admin/login');
@@ -111,42 +114,6 @@
         applyRecordFilters();
     }
 
-    const pagination = document.querySelector('.admin-pagination');
-    if (pagination) {
-        const pageLinks = [...pagination.querySelectorAll('a')].filter(link => /^\d+$/.test(link.textContent.trim()));
-        const currentIndex = pageLinks.findIndex(link => link.getAttribute('aria-current') === 'page');
-        const activeIndex = currentIndex >= 0 ? currentIndex : Math.max(0, pageLinks.findIndex(link => new URL(link.href).searchParams.get('page') === new URLSearchParams(window.location.search).get('page')));
-        if (pageLinks.length > 9 && activeIndex >= 0) {
-            pageLinks.forEach((link, index) => {
-                if (index !== 0 && index !== pageLinks.length - 1 && Math.abs(index - activeIndex) > 2) link.hidden = true;
-            });
-            const hiddenLinks = pageLinks.filter(link => link.hidden);
-            if (hiddenLinks.length) {
-                const gap = document.createElement('span');
-                gap.className = 'admin-pagination-gap';
-                gap.setAttribute('aria-hidden', 'true');
-                gap.textContent = '…';
-                hiddenLinks[0].before(gap);
-            }
-        }
-        if (activeIndex >= 0) {
-            const makePagerLink = (link, label, ariaLabel) => {
-                if (!link) return null;
-                const pager = document.createElement('a');
-                pager.className = 'btn-sm btn-sm-reset admin-pagination-arrow';
-                pager.href = link.href;
-                pager.setAttribute('aria-label', ariaLabel);
-                pager.title = ariaLabel;
-                pager.textContent = label;
-                return pager;
-            };
-            const previous = makePagerLink(pageLinks[activeIndex - 1], '‹', '上一頁');
-            const next = makePagerLink(pageLinks[activeIndex + 1], '›', '下一頁');
-            if (previous) pagination.prepend(previous);
-            if (next) pagination.append(next);
-        }
-    }
-
     const importForm = byId('importForm');
     if (importForm) importForm.addEventListener('submit', async event => {
         event.preventDefault();
@@ -155,9 +122,11 @@
         const button = byId('importBtn'), result = byId('importResult');
         button.disabled = true; button.textContent = '匯入中…'; result.hidden = true;
         try {
-            const response = await fetch('/api/import-sql', { method: 'POST', body: formData });
+            const response = await fetch('/api/import-sql', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: formData });
             if (response.status === 401) { window.location.href = '/admin/login'; return; }
-            const message = await response.text();
+            const isJson = response.headers.get('content-type')?.includes('application/json');
+            const payload = isJson ? await response.json() : await response.text();
+            const message = isJson ? payload.error : payload;
             if (!response.ok) throw new Error(message || '伺服器暫時無法處理請求');
             result.textContent = message; result.hidden = false;
         } catch (error) { result.textContent = '匯入失敗：' + error.message; result.hidden = false; }

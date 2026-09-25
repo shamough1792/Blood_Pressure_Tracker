@@ -36,7 +36,7 @@
                     <div class="card-actions">
                         <a href="/modify/<%= r.id %>?userId=<%= userId %>&name=<%= encodeURIComponent(userName) %>" class="btn btn-secondary">修改</a>
                         <form action="/delete/<%= r.id %>" method="POST" style="display:inline;" onsubmit="return confirm('確定要刪除這條記錄嗎？');">
-                            <input type="hidden" name="userId" value="<%= userId %>"><input type="hidden" name="name" value="<%= userName %>">
+                            <input type="hidden" name="userId" value="<%= userId %>"><input type="hidden" name="name" value="<%= userName %>"><input type="hidden" name="_actionToken" value="<%= actionToken %>">
                             <button type="submit" class="btn btn-danger">刪除</button>
                         </form>
                     </div>

@@ -2,7 +2,8 @@ const express = require('express');
 const db = require('../db');
 const { version: appVersion } = require('../package.json');
 const { formatDateForFilename } = require('../lib/util');
-const { createSessionToken, COOKIE_NAME } = require('../middleware/adminAuth');
+const { buildPaginationItems } = require('../lib/pagination');
+const { createSessionToken, extractToken, COOKIE_NAME } = require('../middleware/adminAuth');
 
 function isHttpsRequest(req) {
     const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
@@ -62,17 +63,32 @@ module.exports = function createAdminRouter(adminAuth) {
         res.status(401).render('admin-login', { error: true, titleSuffix: process.env.TITLE_SUFFIX || '' });
     });
 
-    // 登出：清除 cookie 並導向首頁
-    router.post('/admin/logout', (req, res) => {
-        res.clearCookie(COOKIE_NAME, {
-            path: '/',
-            secure: isHttpsRequest(req)
-        });
+    // 其餘所有管理路由（含 /api/*）需登入
+    router.use(requireAdmin);
+
+    router.use((req, res, next) => {
+        const sessionToken = extractToken(req.headers.cookie);
+        res.locals.csrfToken = adminAuth.createCsrfToken(sessionToken);
+        next();
+    });
+
+    function requireCsrf(req, res, next) {
+        const sessionToken = extractToken(req.headers.cookie);
+        const csrfToken = req.get('x-csrf-token') || req.body?._csrf;
+        if (adminAuth.verifyCsrfToken(sessionToken, csrfToken)) return next();
+        if (req.originalUrl.startsWith('/api/')) return res.status(403).json({ error: '安全驗證失效，請重新整理頁面' });
+        return res.status(403).send('安全驗證失效，請重新整理頁面');
+    }
+
+    router.post('/admin/logout', requireCsrf, (req, res) => {
+        res.clearCookie(COOKIE_NAME, { path: '/', secure: isHttpsRequest(req) });
         res.redirect('/');
     });
 
-    // 其餘所有管理路由（含 /api/*）需登入
-    router.use(requireAdmin);
+    router.use('/api', (req, res, next) => {
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return requireCsrf(req, res, next);
+        next();
+    });
 
     function loadAdminSummary(callback) {
         db.query('SELECT COUNT(*) AS total_records, SUM(recorded_at >= CURDATE()) AS today_records FROM records', callback);
@@ -142,7 +158,8 @@ module.exports = function createAdminRouter(adminAuth) {
                 loadAdminSummary((summaryErr, summaryRows) => {
                     if (summaryErr) return res.status(500).send('讀取統計資料失敗');
                     const summary = summaryRows[0] || { total_records: 0, today_records: 0 };
-                    res.render('admin-records', { users, records: result.records, recordsTotal: result.total, recordsPage: filters.page, recordsPageSize: filters.pageSize, recordFilters: filters, summary: { totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, pageTitle: '血壓記錄', pageDescription: '依使用者、日期與血壓狀態篩選全部量測資料。', activePage: 'records', titleSuffix: process.env.TITLE_SUFFIX || '' });
+                    const totalPages = Math.ceil(result.total / filters.pageSize);
+                    res.render('admin-records', { users, records: result.records, recordsTotal: result.total, recordsPage: filters.page, recordsPageSize: filters.pageSize, recordFilters: filters, paginationItems: buildPaginationItems(totalPages, filters.page), summary: { totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, pageTitle: '血壓記錄', pageDescription: '依使用者、日期與血壓狀態篩選全部量測資料。', activePage: 'records', titleSuffix: process.env.TITLE_SUFFIX || '' });
                 });
             });
         });

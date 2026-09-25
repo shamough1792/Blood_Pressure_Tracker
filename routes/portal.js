@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { buildHealthOverview } = require('../lib/health');
+const { createUserActionToken } = require('../lib/user-action-token');
 const router = express.Router();
 
 // 使用者選擇頁
@@ -20,7 +21,8 @@ router.get('/bp/:userId', (req, res) => {
             successMessage: null,
             titleSuffix: process.env.TITLE_SUFFIX || '',
             userId,
-            userName: users[0].name
+            userName: users[0].name,
+            actionToken: createUserActionToken(process.env.SESSION_SECRET, userId)
         });
     });
 });
@@ -69,7 +71,8 @@ router.get('/records/day', (req, res) => {
             day,
             titleSuffix: process.env.TITLE_SUFFIX || '',
             userId,
-            userName
+            userName,
+            actionToken: createUserActionToken(process.env.SESSION_SECRET, userId)
         });
     });
 });

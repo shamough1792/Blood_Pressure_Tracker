@@ -68,11 +68,28 @@ function createAdminAuth({ username, password, sessionSecret, now = Date.now } =
         return verifyToken(extractToken(req.headers.cookie)) !== null;
     }
 
+    function createCsrfToken(sessionToken) {
+        return crypto.createHmac('sha256', sessionSecret)
+            .update(`csrf:${sessionToken}`)
+            .digest('base64url');
+    }
+
+    function verifyCsrfToken(sessionToken, csrfToken) {
+        if (typeof sessionToken !== 'string' || typeof csrfToken !== 'string' || !sessionToken || !csrfToken) return false;
+        const expected = createCsrfToken(sessionToken);
+        const suppliedBuffer = Buffer.from(csrfToken, 'utf8');
+        const expectedBuffer = Buffer.from(expected, 'utf8');
+        return suppliedBuffer.length === expectedBuffer.length
+            && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
+    }
+
     return {
         credentialsMatch,
         issueToken,
         verifyToken,
-        isAuthenticated
+        isAuthenticated,
+        createCsrfToken,
+        verifyCsrfToken
     };
 }
 
@@ -85,4 +102,12 @@ function verifySessionToken(auth, token, currentTime) {
     return auth.verifyToken(token, currentTime);
 }
 
-module.exports = { createAdminAuth, createSessionToken, verifySessionToken, COOKIE_NAME, SESSION_MAX_AGE_MS };
+function createCsrfToken(auth, sessionToken) {
+    return auth.createCsrfToken(sessionToken);
+}
+
+function verifyCsrfToken(auth, sessionToken, csrfToken) {
+    return auth.verifyCsrfToken(sessionToken, csrfToken);
+}
+
+module.exports = { createAdminAuth, createSessionToken, verifySessionToken, createCsrfToken, verifyCsrfToken, extractToken, COOKIE_NAME, SESSION_MAX_AGE_MS };

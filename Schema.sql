@@ -58,7 +58,9 @@ CREATE TABLE `records` (
 --
 ALTER TABLE `records`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_records_user_recorded_at` (`user_id`, `recorded_at`),
+  ADD KEY `idx_records_recorded_at` (`recorded_at`);
 
 ALTER TABLE `records`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
