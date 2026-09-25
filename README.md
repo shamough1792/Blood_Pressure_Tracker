@@ -1,297 +1,205 @@
 # 血壓記錄系統
 
-<br>
+> 專為家庭與長輩設計的多使用者血壓記錄網站，支援月曆、趨勢統計、Excel 匯出、管理後台及 Docker 部署。
 
 [![Latest Release](https://img.shields.io/badge/version-v2.9.0-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.9.0)
-[![Docker Image Version](https://img.shields.io/badge/docker-ghcr.io-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
-![Node.js Version](https://img.shields.io/badge/node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
-![MariaDB Version](https://img.shields.io/badge/mariadb-%3E%3D10.6-003545?style=flat&logo=mariadb)
-![License](https://img.shields.io/badge/license-MIT-orange?style=flat)
-![PWA Ready](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=flat&logo=pwa)
+[![Docker Image](https://img.shields.io/badge/GHCR-blood__pressure__tracker-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
+![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
+![MariaDB](https://img.shields.io/badge/MariaDB-%3E%3D10.6-003545?style=flat&logo=mariadb)
+[![License](https://img.shields.io/badge/License-MIT-orange?style=flat)](LICENSE.md)
 
-<br>
+## 目錄
 
-一個用 Node.js、Express、MariaDB 打造的血壓記錄網站，專為長輩設計，簡單易用。
-
-<br>
+- [功能特色](#功能特色)
+- [快速開始](#快速開始)
+- [環境變數](#環境變數)
+- [管理後台與備份](#管理後台與備份)
+- [健康檢查](#健康檢查)
+- [畫面截圖](#畫面截圖)
+- [既有資料庫升級](#既有資料庫升級)
+- [本機開發](#本機開發)
+- [版本紀錄](#版本紀錄)
 
 ## 功能特色
 
-<br>
-
-- **多使用者 Portal** — 家庭成員獨立記錄，點擊大頭貼切換，管理後台管理使用者
-- **長者友善 4 步驟輸入** — 逐步輸入，預設保留實際錄入時間，也可補錄時指定上午或下午
-- **月曆檢視 + 統計圖表** — 全月記錄一目了然，趨勢圖可放大
-- **血壓分級顏色** — 正常綠 / 低血壓藍 / 高血壓紅，全介面統一標示
-- **Excel 匯出 + JSON 備份** — 串流產生日曆格式報表，版本化 JSON 備份附 SHA-256 checksum 與匯入預覽
-- **PWA 支援** — 安裝到手機主畫面，像原生 App 般使用
-- **Docker 一鍵部署** — 可連 Synology NAS 或其他外部資料庫
-
-<br>
+- **多使用者 Portal**：家庭成員各自保存記錄，透過大頭貼快速切換。
+- **長者友善輸入流程**：四步驟完成血壓記錄，支援上午、下午及補錄時段。
+- **月曆與單日詳情**：以早／晚狀態顯示每月記錄，並可查看或修改單日資料。
+- **趨勢與健康摘要**：統計收縮壓、舒張壓與心跳變化，圖表支援放大檢視。
+- **清晰的血壓分級**：以綠、藍、紅色區分正常、低血壓及高血壓。
+- **匯出與備份**：支援 Excel 匯出，以及附 SHA-256 checksum 的版本化 JSON 備份。
+- **管理後台**：管理使用者與記錄、進階篩選、近期統計及系統狀態。
+- **PWA 與 Docker**：可安裝至手機主畫面，並支援 GHCR image、Docker Compose 及外部 MariaDB。
 
 ## 快速開始
 
-<br>
+### Docker（推薦）
 
-### 方式一：Docker（推薦）
+先準備可連線的 MariaDB 資料庫，並匯入 [mariadb/init.sql](mariadb/init.sql)。接著建立 <code>compose.yml</code>：
 
-#### 使用預先 build 好的 image
-
-```yaml
+~~~yaml
 services:
   app:
-    image: ghcr.io/shamough1792/blood_pressure_tracker:latest
+    image: ghcr.io/shamough1792/blood_pressure_tracker:2.9.0
     ports:
       - "3000:3000"
     environment:
       TZ: Asia/Hong_Kong
       DB_HOST: 192.168.1.222
       DB_USER: tracker_user
-      DB_PASSWORD: 'your_password'
+      DB_PASSWORD: your_database_password
       DB_NAME: blood_test
       ADMIN_USER: admin
-      ADMIN_PASSWORD: 'your_admin_password'
-      SESSION_SECRET: 'your_random_secret'
+      ADMIN_PASSWORD: your_admin_password
+      SESSION_SECRET: your_random_session_secret
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-      interval: 30s
-      timeout: 5s
-      start_period: 15s
-      retries: 3
-```
+~~~
 
-```bash
+啟動服務：
+
+~~~bash
 docker compose up -d
-```
+~~~
 
-#### 自行 build
+開啟：
 
-```yaml
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      TZ: Asia/Hong_Kong
-      DB_HOST: 192.168.1.222
-      DB_USER: tracker_user
-      DB_PASSWORD: 'your_password'
-      DB_NAME: blood_test
-      ADMIN_USER: admin
-      ADMIN_PASSWORD: 'your_admin_password'
-      SESSION_SECRET: 'your_random_secret'
-    restart: unless-stopped
-```
+- 使用者入口：<http://localhost:3000>
+- 管理後台：<http://localhost:3000/admin>
 
-```bash
+> 正式環境建議固定使用完整版本標籤（例如 <code>2.9.0</code>），確認升級後再更新；<code>latest</code> 會隨最新正式版移動。
+
+### 從原始碼建置 Docker image
+
+~~~bash
+git clone https://github.com/shamough1792/Blood_Pressure_Tracker.git
+cd Blood_Pressure_Tracker
 docker compose up -d --build
-```
+~~~
 
-### 方式二：手動安裝
+啟動前請在 [docker-compose.yml](docker-compose.yml) 填入資料庫及管理員環境變數。
 
-#### 環境需求
+## 環境變數
 
-- Node.js >= 20
-- MariaDB >= 10.6
+| 變數 | 必填 | 說明 | 預設值 |
+| --- | :---: | --- | --- |
+| <code>DB_HOST</code> | 是 | MariaDB 主機名稱或 IP | — |
+| <code>DB_USER</code> | 是 | MariaDB 使用者 | — |
+| <code>DB_PASSWORD</code> | 是 | MariaDB 密碼 | — |
+| <code>DB_NAME</code> | 是 | 資料庫名稱 | — |
+| <code>DB_POOL_SIZE</code> | 否 | 資料庫連線池上限 | <code>10</code> |
+| <code>PORT</code> | 否 | Web 服務埠號 | <code>3000</code> |
+| <code>ADMIN_USER</code> | 是 | 管理後台帳號 | — |
+| <code>ADMIN_PASSWORD</code> | 是 | 管理後台密碼 | — |
+| <code>SESSION_SECRET</code> | 是 | Session cookie 簽名密鑰 | — |
+| <code>TZ</code> | 否 | 伺服器時區 | 依執行環境 |
 
-#### 安裝步驟
+產生高熵 <code>SESSION_SECRET</code>：
 
-```bash
-npm install
-```
-
-#### 建立資料庫
-
-```sql
-CREATE DATABASE blood_test;
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    color VARCHAR(7) NOT NULL DEFAULT '#4CAF50',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-INSERT INTO users (name, color) VALUES ('使用者', '#4CAF50');
-CREATE TABLE records (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    high_pressure INT NOT NULL,
-    low_pressure INT NOT NULL,
-    heartbeat INT NOT NULL,
-    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    user_id INT NOT NULL DEFAULT 1,
-    INDEX idx_records_user_recorded_at (user_id, recorded_at),
-    INDEX idx_records_recorded_at (recorded_at),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-既有資料庫升級時，請執行索引 migration：
-
-```bash
-mysql -h <DB_HOST> -u <DB_USER> -p <DB_NAME> < mariadb/migration-002-add-record-indexes.sql
-```
-
-#### 環境變數
-
-| 變數 | 說明 | 預設值 |
-|------|------|--------|
-| `DB_HOST` | 資料庫主機 | `192.168.1.222` |
-| `DB_USER` | 資料庫帳號 | `tracker_user` |
-| `DB_PASSWORD` | 資料庫密碼 | |
-| `DB_NAME` | 資料庫名稱 | `blood_test` |
-| `DB_POOL_SIZE` | 資料庫連線池上限 | `10` |
-| `PORT` | 網站埠號 | `3000` |
-| `ADMIN_USER` | 管理後台帳號 | |
-| `ADMIN_PASSWORD` | 管理後台密碼 | |
-| `SESSION_SECRET` | Session cookie 簽名密鑰（高熵隨機） | |
-
-#### 啟動
-
-```bash
-npm start
-```
-
-開啟 http://localhost:3000 即可看到使用者選擇頁。
-
-<br>
-
-## 管理後台認證
-
-管理後台位於 `/admin`，需登入才能管理使用者、匯入 SQL 或下載 SQL 備份；一般血壓記錄功能維持公開。
-
-管理後台的建議備份格式為 JSON。下載檔案包含格式版本及 SHA-256 checksum；匯入時會先預覽有效、略過與總筆數，只有再次確認後才以資料庫交易寫入。舊版 SQL 匯出及匯入 API 暫時保留作相容用途。
-
-設定三個環境變數後，使用以下指令產生高熵的 `SESSION_SECRET`：
-
-```bash
+~~~bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
-```
+~~~
 
-任一個認證變數未設定時，服務不會啟動。Session cookie 具 `HttpOnly` 與 `SameSite=Lax` 屬性，於 production 加上 `Secure`；部署需透過 HTTPS reverse proxy（如 Synology 的 reverse proxy）提供 TLS，請勿直接將 3000 port 暴露到公網。
+若 <code>ADMIN_USER</code>、<code>ADMIN_PASSWORD</code> 或 <code>SESSION_SECRET</code> 未設定，服務會拒絕啟動。
 
-<br>
+## 管理後台與備份
 
-## Docker 部署
+管理後台位於 <code>/admin</code>，登入後可：
 
-<br>
+- 管理使用者及血壓記錄。
+- 依使用者、日期及血壓條件篩選記錄。
+- 查看以伺服器日期計算的今日記錄與指定使用者最近 7 日統計。
+- 下載 JSON 或舊版 SQL 備份。
+- 預覽 JSON 匯入結果，再以資料庫交易寫入。
 
-### 健康檢查
+JSON 是目前建議的備份格式，檔案包含格式版本與 SHA-256 checksum。匯入時會先顯示有效、略過及總筆數，確認後才寫入資料庫。
 
-- `GET /health`：程序已啟動即回傳 `200`。
-- `GET /ready`：資料庫可查詢時回傳 `200`，否則回傳 `503`。
-- Docker image 內建 `HEALTHCHECK`，docker-compose 亦使用 `/ready` 判斷服務就緒。
+### 部署安全建議
 
-### CI/CD
+- 使用 HTTPS reverse proxy 提供外部存取。
+- 不要直接將應用程式的 <code>3000</code> port 暴露至公網。
+- 定期備份資料庫或下載 JSON 備份。
+- Session cookie 使用 <code>HttpOnly</code> 與 <code>SameSite=Lax</code>；production 模式會加上 <code>Secure</code>。
 
-- Pull Request 與 `main` push 會執行 JavaScript 語法檢查、測試、正式依賴 audit 與 Docker build。
-- 推送 `vX.Y.Z` tag 時，workflow 會先核對 tag 與 `package.json` 版本一致，再建立 GitHub Release 並發布 `latest`、完整版本及 major/minor 標籤至 GHCR。
-- 所有 GitHub Actions 均固定至完整 commit SHA，PR workflow 只使用唯讀權限。
+## 健康檢查
 
-### 使用外部資料庫（如 Synology NAS）
+| 端點 | 用途 | 成功狀態 |
+| --- | --- | :---: |
+| <code>GET /health</code> | 確認 Node.js 程序正在運行 | <code>200</code> |
+| <code>GET /ready</code> | 確認應用程式可連線至資料庫 | <code>200</code> |
 
-```yaml
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      TZ: Asia/Hong_Kong
-      DB_HOST: 192.168.1.222
-      DB_USER: tracker_user
-      DB_PASSWORD: 'your_password'
-      DB_NAME: blood_test
-      ADMIN_USER: admin
-      ADMIN_PASSWORD: 'your_admin_password'
-      SESSION_SECRET: 'your_random_secret'
-    restart: unless-stopped
-```
-
-<br>
+資料庫不可用時 <code>/ready</code> 會回傳 <code>503</code>。官方 Docker image 已內建 <code>HEALTHCHECK</code>。
 
 ## 畫面截圖
 
-<br>
+| 使用者入口 | 記錄首頁 |
+| --- | --- |
+| ![使用者選擇頁](images/portal.png) | ![首頁](images/index.png) |
 
-![使用者選擇頁](images/portal.png)
+| 月曆記錄 | 單日詳細記錄 |
+| --- | --- |
+| ![記錄頁](images/record.png) | ![單日詳細紀錄頁](images/day-detail.png) |
 
-<br>
+| 統計頁 | 管理後台 |
+| --- | --- |
+| ![統計頁](images/stats.png) | ![管理後台](images/admin.png) |
 
-![首頁](images/index.png)
-
-<br>
-
-![記錄頁（月曆檢視，早晚狀態）](images/record.png)
-
-<br>
-
-![單日詳細紀錄頁](images/day-detail.png)
-
-<br>
-
-![統計頁](images/stats.png)
-
-<br>
+<details>
+<summary>管理員登入頁</summary>
 
 ![管理員登入頁](images/admin-login.png)
 
-<br>
+</details>
 
-![管理後台](images/admin.png)
+## 既有資料庫升級
 
-<br>
+升級前請先備份資料庫。從較早版本升級至 <code>2.9.0</code> 時，請套用記錄查詢索引：
+
+~~~bash
+mysql -h <DB_HOST> -u <DB_USER> -p <DB_NAME> < mariadb/migration-002-add-record-indexes.sql
+~~~
+
+若資料庫尚未加入多使用者結構，請先檢查並套用 [mariadb/migration-001-add-users.sql](mariadb/migration-001-add-users.sql)。
+
+## 本機開發
+
+### 系統需求
+
+- Node.js 20 或以上
+- MariaDB 10.6 或以上
+
+### 安裝與啟動
+
+~~~bash
+npm install
+npm start
+~~~
+
+### 執行測試
+
+~~~bash
+npm test
+~~~
+
+專案使用 Node.js 內建 test runner，測試涵蓋認證、記錄存取、備份、分頁、管理後台及主要 UI 行為。
+
+## CI/CD
+
+- Pull Request 與 <code>main</code> push 會執行語法檢查、測試、production dependency audit 及 Docker build。
+- 推送 <code>vX.Y.Z</code> tag 時，Release workflow 會核對 tag 與 <code>package.json</code> 版本。
+- 通過後自動建立 GitHub Release，並發布完整版本、minor 版本及 <code>latest</code> 標籤至 GHCR。
 
 ## 版本紀錄
 
-<br>
+| 版本 | 重點更新 |
+| --- | --- |
+| [2.9.0](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.9.0) | 管理後台可靠性與安全、JSON 備份、健康檢查、近期統計及 CI/CD |
+| [2.8.7](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.7) | 管理後台篩選、分頁與操作體驗 |
+| [2.8.6](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.6) | 今日記錄改以伺服器日期計算 |
+| [2.8.5](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.5) | 管理員登入頁版面優化 |
+| [2.8.3](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.3) | 首頁、手機版、月曆及補錄流程優化 |
 
-* 0.1 — 初始版本
-* 0.2 — UI 更新，新增成功提示
-* 0.3 — 錯誤修正，自動重新連線
-* 0.3.5 — CSV 輸出優化
-* 0.4 — CSV 檔名格式、網站圖示
-* 0.5 — 改用 Excel 匯出、版面調整
-* 0.5.1 — 無資料時匯出錯誤修正
-* 0.6 — 記錄按月分組、新增修改功能
-* **1.0** — 長者友善改版、4 步驟輸入、卡片檢視、PWA、Docker、Excel 顏色標示
-* **2.0** — 多使用者 Portal、管理後台、SQL 匯入、使用者名稱顯示
-* **2.1** — 低血壓提示
-* **2.2** — 月曆檢視、PWA 快取更新優化
-* **2.3** — 統計圖表、每月摘要、SQL 備份匯出、按鈕美化
-* **2.3.1** — 統計頁優化：每日聚合圖表、全部範圍修正、全屏放大檢視
-* **2.3.2** — Docker image 瘦身：移除未用套件、改用 Alpine，508MB → 298MB
-* **2.3.3** — 全部 emoji 改用 SVG 圖示，跨裝置顯示一致
-* **2.4** — 代碼重構（路由拆分）、血壓輸入驗證、上傳限制、操作記錄 Log
-* **2.4.1** — 重覆記錄警告：同日同時段已有記錄時提示確認。
-* **2.5** — 管理後台 Session 認證：登入頁、HMAC 簽名 Session cookie、dotenv 支援、管理 API 保護
-* **2.6** — 介面優化：首頁使用者選擇、月曆早晚標示、健康摘要及全站標題置中
-* **2.7** — 月曆改用早／晚雙列狀態顯示，提升手機閱讀清晰度
-* **2.7.1** — 修正 iOS 窄螢幕月份選擇器文字被裁切問題
-* **2.8.0** — 新增單日詳細紀錄頁，改善月曆日期導覽及桌面版面配置
-* **2.8.1** — 修正內網 HTTP 管理員登入 cookie 無法保存問題
-* **2.8.2** — 月曆以特殊外框標示當天日期
-* **2.8.3** — 優化首頁與手機版版面、改善月曆與卡片顯示、修正記錄時間保留及補錄時段選擇
-* **2.8.4** — 後台版本號同步 package.json，更新 GitHub Release 與 Docker image
-* **2.8.5** — 美化管理員登入頁，改善登入表單與手機版面
-* **2.9.0** — 強化管理後台可靠性與安全：資料庫連線池、健康檢查、JSON 備份校驗與預覽、使用者近期統計、分區總覽、CI/CD、GitHub Release 及 GHCR 自動發布
-* **2.8.7** — 優化管理後台分頁、篩選與操作體驗，加入前後頁導覽
-* **2.8.6** — 修正後台今日記錄說明，明確標示以伺服器日期計算
-
-<br>
-
-## 作者
-
-<br>
-
-[shamough1792](https://github.com/shamough1792)
-
-<br>
+更早版本與完整變更請參閱 [GitHub Releases](https://github.com/shamough1792/Blood_Pressure_Tracker/releases)。
 
 ## 授權
 
-<br>
-
-本專案採用 MIT 授權 — 詳見 [LICENSE.md](LICENSE.md)
-
-<br>
+本專案採用 [MIT License](LICENSE.md)。
