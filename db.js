@@ -1,32 +1,21 @@
 const mysql = require('mysql2');
 
-// 單一連線（家用場景，量極細；毋需 pool）
-const db = mysql.createConnection({
+const db = mysql.createPool({
     host: process.env.DB_HOST || '192.168.1.222',
     user: process.env.DB_USER || 'tracker_user',
     password: process.env.DB_PASSWORD || 'mypassword',
-    database: process.env.DB_NAME || 'blood_test'
+    database: process.env.DB_NAME || 'blood_test',
+    waitForConnections: true,
+    connectionLimit: Math.max(2, Number.parseInt(process.env.DB_POOL_SIZE, 10) || 10),
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
 });
 
-db.connect(err => {
-    if (err) throw err;
-    console.log('Connected to database');
-});
-
-// 每 10 分鐘檢查連線，斷線自動重連（唔 log 成功，避免洗 log）
-setInterval(() => {
-    db.query('SELECT 1', (err) => {
-        if (err) {
-            console.error('Database connection lost, reconnecting:', err);
-            db.connect((err2) => {
-                if (err2) {
-                    console.error('Error reconnecting to database:', err2);
-                } else {
-                    console.log('Reconnected to database');
-                }
-            });
-        }
+db.on('connection', connection => {
+    connection.query("SET time_zone = '+08:00'", error => {
+        if (error) console.error('設定資料庫時區失敗：', error.message);
     });
-}, 600000);
+});
 
 module.exports = db;

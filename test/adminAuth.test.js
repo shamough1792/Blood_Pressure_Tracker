@@ -4,7 +4,9 @@ const crypto = require('node:crypto');
 const {
     createAdminAuth,
     createSessionToken,
-    verifySessionToken
+    verifySessionToken,
+    createCsrfToken,
+    verifyCsrfToken
 } = require('../middleware/adminAuth');
 
 const NOW = 1_700_000_000_000;
@@ -73,4 +75,16 @@ test('過期、格式錯誤和簽名長度不符 token 不會通過或拋出例�
     assert.equal(verifySessionToken(auth, oldToken, NOW), null);
     assert.equal(verifySessionToken(auth, malformedToken, NOW), null);
     assert.doesNotThrow(() => verifySessionToken(auth, 'abc.x', NOW));
+});
+
+test('CSRF token 必須與有效管理員 session 綁定', () => {
+    const auth = createAdminAuth(CONFIG);
+    const sessionToken = createSessionToken(auth, NOW);
+    const otherSessionToken = createSessionToken(auth, NOW + 1);
+    const csrfToken = createCsrfToken(auth, sessionToken);
+
+    assert.equal(verifyCsrfToken(auth, sessionToken, csrfToken), true);
+    assert.equal(verifyCsrfToken(auth, otherSessionToken, csrfToken), false);
+    assert.equal(verifyCsrfToken(auth, sessionToken, csrfToken + 'x'), false);
+    assert.equal(verifyCsrfToken(auth, sessionToken, ''), false);
 });

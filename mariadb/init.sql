@@ -16,5 +16,7 @@ CREATE TABLE IF NOT EXISTS records (
     recorded_at timestamp NOT NULL DEFAULT current_timestamp(),
     user_id int(11) NOT NULL DEFAULT 1,
     PRIMARY KEY (id),
-    KEY user_id (user_id)
+    KEY user_id (user_id),
+    KEY idx_records_user_recorded_at (user_id, recorded_at),
+    KEY idx_records_recorded_at (recorded_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
