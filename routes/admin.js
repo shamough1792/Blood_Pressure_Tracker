@@ -1,8 +1,11 @@
 const express = require('express');
-const db = require('../db');
+const defaultDb = require('../db');
 const { version: appVersion } = require('../package.json');
 const { formatDateForFilename } = require('../lib/util');
 const { buildPaginationItems } = require('../lib/pagination');
+const { buildAdminOverview, buildAdminOverviewQuery } = require('../lib/admin-overview');
+const { createBackup, parseBackup, previewBackup } = require('../lib/backup');
+const { withTransaction } = require('../lib/db-transaction');
 const { createSessionToken, extractToken, COOKIE_NAME } = require('../middleware/adminAuth');
 
 function isHttpsRequest(req) {
@@ -13,9 +16,10 @@ function isHttpsRequest(req) {
     return req.protocol === 'https' || req.secure === true || forwardedProto === 'https';
 }
 
-module.exports = function createAdminRouter(adminAuth) {
+module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
     const router = express.Router();
     const loginAttempts = new Map();
+    let lastBackupAt = null;
     const validColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
     const validId = value => /^\d+$/.test(String(value)) && Number(value) > 0;
 
@@ -130,13 +134,18 @@ module.exports = function createAdminRouter(adminAuth) {
 
     // 管理總覽
     router.get('/admin', (req, res) => {
+        const overviewUserId = validId(req.query.overviewUser) ? String(req.query.overviewUser) : '';
         const usersSql = 'SELECT u.id, u.name, u.color, u.created_at, COUNT(r.id) AS record_count, MAX(r.recorded_at) AS last_recorded_at FROM users u LEFT JOIN records r ON r.user_id = u.id GROUP BY u.id, u.name, u.color, u.created_at ORDER BY u.id ASC';
         db.query(usersSql, (err, users) => {
             if (err) return res.status(500).send('讀取使用者資料失敗');
             loadAdminSummary((summaryErr, summaryRows) => {
                 if (summaryErr) return res.status(500).send('讀取統計資料失敗');
-                const summary = summaryRows[0] || { total_records: 0, today_records: 0 };
-                res.render('admin', { pageTitle: '管理總覽', pageDescription: '快速查看使用者與血壓記錄的整體狀況。', activePage: 'overview', summary: { totalUsers: users.length, totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, titleSuffix: process.env.TITLE_SUFFIX || '' });
+                const overviewQuery = buildAdminOverviewQuery(overviewUserId);
+                db.query(overviewQuery.sql, overviewQuery.params, (overviewErr, recentRecords) => {
+                    if (overviewErr) return res.status(500).send('讀取近期統計失敗');
+                    const summary = summaryRows[0] || { total_records: 0, today_records: 0 };
+                    res.render('admin', { pageTitle: '管理總覽', pageDescription: '快速查看使用者與血壓記錄的整體狀況。', activePage: 'overview', summary: { totalUsers: users.length, totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, overview: buildAdminOverview(recentRecords), overviewUsers: users, overviewUserId, lastBackupAt, titleSuffix: process.env.TITLE_SUFFIX || '' });
+                });
             });
         });
     });
@@ -181,7 +190,23 @@ module.exports = function createAdminRouter(adminAuth) {
     router.get('/admin/backup', (req, res) => {
         db.query('SELECT id, name FROM users ORDER BY id ASC', (err, users) => {
             if (err) return res.status(500).send('讀取使用者資料失敗');
-            res.render('admin-backup', { users, pageTitle: '備份還原', pageDescription: '下載完整資料備份，或將 SQL 記錄匯入指定使用者。', activePage: 'backup', titleSuffix: process.env.TITLE_SUFFIX || '' });
+            res.render('admin-backup', { users, pageTitle: '備份還原', pageDescription: '下載具 checksum 的 JSON 備份，匯入前可先預覽資料。', activePage: 'backup', titleSuffix: process.env.TITLE_SUFFIX || '' });
+        });
+    });
+
+    router.get('/admin/export/backup.json', (req, res, next) => {
+        db.query('SELECT id, name, color, created_at FROM users ORDER BY id ASC', (userErr, users) => {
+            if (userErr) return next(userErr);
+            db.query('SELECT id, high_pressure, low_pressure, heartbeat, recorded_at, user_id FROM records ORDER BY id ASC', (recordErr, records) => {
+                if (recordErr) return next(recordErr);
+                const now = new Date();
+                const backup = createBackup({ users, records, exportedAt: now.toISOString(), appVersion });
+                lastBackupAt = now;
+                const filename = `血壓記錄備份_${formatDateForFilename(now)}.json`;
+                res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+                res.send(JSON.stringify(backup, null, 2));
+            });
         });
     });
 
@@ -266,23 +291,64 @@ router.post('/api/users', (req, res) => {
 });
 
 // API: 刪除使用者（連同記錄）
-router.delete('/api/users/:id', (req, res) => {
+router.delete('/api/users/:id', async (req, res) => {
     const userId = req.params.id;
     if (!validId(userId)) return res.status(400).json({ error: '使用者編號無效' });
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ error: '刪除使用者失敗' });
-        db.query('DELETE FROM records WHERE user_id = ?', [userId], deleteErr => {
-            if (deleteErr) return db.rollback(() => res.status(500).json({ error: '刪除使用者失敗' }));
-            db.query('DELETE FROM users WHERE id = ?', [userId], (userErr, result) => {
-                if (userErr) return db.rollback(() => res.status(500).json({ error: '刪除使用者失敗' }));
-                if (!result.affectedRows) return db.rollback(() => res.status(404).json({ error: '找不到使用者' }));
-                db.commit(commitErr => {
-                    if (commitErr) return db.rollback(() => res.status(500).json({ error: '刪除使用者失敗' }));
-                    res.json({ success: true });
-                });
-            });
+    try {
+        await withTransaction(db, async connection => {
+            await connection.query('DELETE FROM records WHERE user_id = ?', [userId]);
+            const [result] = await connection.query('DELETE FROM users WHERE id = ?', [userId]);
+            if (!result.affectedRows) {
+                const error = new Error('找不到使用者');
+                error.statusCode = 404;
+                throw error;
+            }
         });
-    });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.statusCode === 404 ? error.message : '刪除使用者失敗' });
+    }
+});
+
+function readBackupUpload(req) {
+    if (!req.files || !req.files.backupFile) throw Object.assign(new Error('請上傳 JSON 備份檔案'), { statusCode: 400 });
+    const upload = req.files.backupFile;
+    if (upload.size > 5 * 1024 * 1024) throw Object.assign(new Error('備份檔案不可超過 5 MB'), { statusCode: 413 });
+    return parseBackup(upload.data.toString('utf8'));
+}
+
+async function prepareBackupImport(req) {
+    const targetUserId = Number.parseInt(req.body.user_id, 10);
+    if (!validId(targetUserId)) throw Object.assign(new Error('請選擇有效使用者'), { statusCode: 400 });
+    const [users] = await db.promise().query('SELECT id FROM users WHERE id = ? LIMIT 1', [targetUserId]);
+    if (!users.length) throw Object.assign(new Error('找不到指定使用者'), { statusCode: 400 });
+    const preview = previewBackup(readBackupUpload(req), targetUserId);
+    if (!preview.validRows.length) throw Object.assign(new Error('備份中沒有可匯入的有效記錄'), { statusCode: 400 });
+    if (preview.validRows.length > 5000) throw Object.assign(new Error('單次最多匯入 5000 筆記錄'), { statusCode: 413 });
+    return preview;
+}
+
+router.post('/api/import-backup/preview', async (req, res) => {
+    try {
+        const preview = await prepareBackupImport(req);
+        res.json({ total: preview.total, valid: preview.validRows.length, skipped: preview.skipped, exportedAt: preview.exportedAt, sourceVersion: preview.sourceVersion });
+    } catch (error) {
+        res.status(error.statusCode || 400).json({ error: error.message });
+    }
+});
+
+router.post('/api/import-backup/confirm', async (req, res) => {
+    try {
+        const preview = await prepareBackupImport(req);
+        await withTransaction(db, async connection => {
+            for (const row of preview.validRows) {
+                await connection.query('INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)', row);
+            }
+        });
+        res.json({ success: true, imported: preview.validRows.length, skipped: preview.skipped });
+    } catch (error) {
+        res.status(error.statusCode || 400).json({ error: error.statusCode ? error.message : '匯入失敗，資料已回復' });
+    }
 });
 
 // API: 編輯使用者
@@ -346,28 +412,17 @@ router.post('/api/import-sql', async (req, res) => {
     if (rows.length === 0) return res.send('找不到符合格式與數值範圍的記錄');
     if (rows.length > 5000) return res.status(413).send('單次最多匯入 5000 筆記錄');
 
-    // 逐筆匯入，每筆之間讓出事件循環，避免卡住
-    let success = 0, failed = 0;
-
-    await new Promise((resolve, reject) => db.beginTransaction(err => err ? reject(err) : resolve()));
     try {
-      for (const row of rows) {
-        await new Promise(resolve => {
-            db.query('INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)', row, (err) => {
-                if (err) return resolve(err);
-                success++;
-                resolve(null);
-            });
-        }).then(err => { if (err) failed++; });
-      }
-      if (failed) throw new Error('匯入資料失敗');
-      await new Promise((resolve, reject) => db.commit(err => err ? reject(err) : resolve()));
+      await withTransaction(db, async connection => {
+          for (const row of rows) {
+              await connection.query('INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)', row);
+          }
+      });
     } catch (error) {
-      await new Promise(resolve => db.rollback(resolve));
       return res.status(400).send('匯入失敗，資料已回復，請檢查 SQL 內容');
     }
 
-    res.send(`匯入完成：成功 ${success} 筆，失敗 ${failed} 筆`);
+    res.send(`匯入完成：成功 ${rows.length} 筆，失敗 0 筆`);
 });
 
     return router;

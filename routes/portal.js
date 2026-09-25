@@ -1,13 +1,14 @@
 const express = require('express');
-const db = require('../db');
+const defaultDb = require('../db');
 const { buildHealthOverview } = require('../lib/health');
 const { createUserActionToken } = require('../lib/user-action-token');
+module.exports = function createPortalRouter(db = defaultDb) {
 const router = express.Router();
 
 // 使用者選擇頁
-router.get('/', (req, res) => {
+router.get('/', (req, res, next) => {
     db.query('SELECT * FROM users ORDER BY id ASC', (err, users) => {
-        if (err) throw err;
+        if (err) return next(err);
         res.render('portal', { users, titleSuffix: process.env.TITLE_SUFFIX || '' });
     });
 });
@@ -28,10 +29,10 @@ router.get('/bp/:userId', (req, res) => {
 });
 
 // 記錄頁（月曆檢視）
-router.get('/records', (req, res) => {
+router.get('/records', (req, res, next) => {
     const userId = req.query.userId || 1;
     db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at DESC', [userId], (err, results) => {
-        if (err) throw err;
+        if (err) return next(err);
 
         // Group records by year and month
         const groupedRecords = results.reduce((acc, record) => {
@@ -58,11 +59,11 @@ router.get('/records', (req, res) => {
 });
 
 // 單日詳細記錄頁
-router.get('/records/day', (req, res) => {
+router.get('/records/day', (req, res, next) => {
     const userId = req.query.userId || 1;
     const date = req.query.date || '';
     db.query('SELECT * FROM records WHERE user_id = ? AND DATE(recorded_at) = ? ORDER BY recorded_at ASC', [userId, date], (err, records) => {
-        if (err) throw err;
+        if (err) return next(err);
         const userName = req.query.name || '';
         const day = date ? new Date(`${date}T12:00:00`) : null;
         res.render('day-detail', {
@@ -78,13 +79,13 @@ router.get('/records/day', (req, res) => {
 });
 
 // 統計頁：趨勢圖 + 每月摘要
-router.get('/stats', (req, res) => {
+router.get('/stats', (req, res, next) => {
     const userId = req.query.userId || 1;
     const range = req.query.range === '0' ? 0 : (parseInt(req.query.range) || 6);
     const userName = req.query.name || '';
 
     db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], (err, results) => {
-        if (err) throw err;
+        if (err) return next(err);
 
         const now = new Date();
         const cutoff = range === 0
@@ -148,4 +149,5 @@ router.get('/stats', (req, res) => {
     });
 });
 
-module.exports = router;
+return router;
+};

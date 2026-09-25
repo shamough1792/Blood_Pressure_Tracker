@@ -23,7 +23,7 @@
 - **長者友善 4 步驟輸入** — 逐步輸入，預設保留實際錄入時間，也可補錄時指定上午或下午
 - **月曆檢視 + 統計圖表** — 全月記錄一目了然，趨勢圖可放大
 - **血壓分級顏色** — 正常綠 / 低血壓藍 / 高血壓紅，全介面統一標示
-- **Excel 匯出 + SQL 備份** — 日曆格式報表、完整資料庫備份
+- **Excel 匯出 + JSON 備份** — 串流產生日曆格式報表，版本化 JSON 備份附 SHA-256 checksum 與匯入預覽
 - **PWA 支援** — 安裝到手機主畫面，像原生 App 般使用
 - **Docker 一鍵部署** — 可連 Synology NAS 或其他外部資料庫
 
@@ -53,6 +53,12 @@ services:
       ADMIN_PASSWORD: 'your_admin_password'
       SESSION_SECRET: 'your_random_secret'
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
 ```
 
 ```bash
@@ -134,6 +140,7 @@ mysql -h <DB_HOST> -u <DB_USER> -p <DB_NAME> < mariadb/migration-002-add-record-
 | `DB_USER` | 資料庫帳號 | `tracker_user` |
 | `DB_PASSWORD` | 資料庫密碼 | |
 | `DB_NAME` | 資料庫名稱 | `blood_test` |
+| `DB_POOL_SIZE` | 資料庫連線池上限 | `10` |
 | `PORT` | 網站埠號 | `3000` |
 | `ADMIN_USER` | 管理後台帳號 | |
 | `ADMIN_PASSWORD` | 管理後台密碼 | |
@@ -153,6 +160,8 @@ npm start
 
 管理後台位於 `/admin`，需登入才能管理使用者、匯入 SQL 或下載 SQL 備份；一般血壓記錄功能維持公開。
 
+管理後台的建議備份格式為 JSON。下載檔案包含格式版本及 SHA-256 checksum；匯入時會先預覽有效、略過與總筆數，只有再次確認後才以資料庫交易寫入。舊版 SQL 匯出及匯入 API 暫時保留作相容用途。
+
 設定三個環境變數後，使用以下指令產生高熵的 `SESSION_SECRET`：
 
 ```bash
@@ -166,6 +175,18 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ## Docker 部署
 
 <br>
+
+### 健康檢查
+
+- `GET /health`：程序已啟動即回傳 `200`。
+- `GET /ready`：資料庫可查詢時回傳 `200`，否則回傳 `503`。
+- Docker image 內建 `HEALTHCHECK`，docker-compose 亦使用 `/ready` 判斷服務就緒。
+
+### CI/CD
+
+- Pull Request 與 `main` push 會執行 JavaScript 語法檢查、測試、正式依賴 audit 與 Docker build。
+- 推送 `vX.Y.Z` tag 時，workflow 會先核對 tag 與 `package.json` 版本一致，再建立 GitHub Release 並發布 `latest`、完整版本及 major/minor 標籤至 GHCR。
+- 所有 GitHub Actions 均固定至完整 commit SHA，PR workflow 只使用唯讀權限。
 
 ### 使用外部資料庫（如 Synology NAS）
 

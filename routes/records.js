@@ -1,12 +1,11 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const db = require('../db');
+const defaultDb = require('../db');
 const { buildExcel } = require('../lib/excel');
 const { formatDateForFilename } = require('../lib/util');
 const { buildRecordedAt } = require('../lib/record-time');
 const { parsePositiveId, recordOwnerWhere } = require('../lib/record-access');
 const { createUserActionToken, verifyUserActionToken } = require('../lib/user-action-token');
+module.exports = function createRecordsRouter(db = defaultDb) {
 const router = express.Router();
 
 // 血壓輸入驗證：合理範圍內先接受，防垃圾值入庫
@@ -128,20 +127,16 @@ router.post('/delete/:id', (req, res) => {
 });
 
 // Excel 匯出
-router.get('/export/excel', (req, res) => {
+router.get('/export/excel', (req, res, next) => {
     const userId = req.query.userId || 1;
     db.query('SELECT name FROM users WHERE id = ?', [userId], (err2, users) => {
+        if (err2) return next(err2);
         const userName = users && users.length ? users[0].name : '';
         db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], async (err, results) => {
-            if (err) throw err;
+            if (err) return next(err);
 
             if (results.length === 0) {
-                return res.send(`
-                    <script>
-                        alert('沒有記錄可供匯出');
-                        window.history.back();
-                    </script>
-                `);
+                return res.status(404).send('沒有記錄可供匯出');
             }
 
             const workbook = buildExcel(results, userName);
@@ -150,20 +145,17 @@ router.get('/export/excel', (req, res) => {
             const formattedDate = formatDateForFilename(today);
             const excelSuffix = userName || process.env.TITLE_SUFFIX || '';
             const excelFilename = `血壓記錄${excelSuffix ? '(' + excelSuffix + ')' : ''}_${formattedDate}.xlsx`;
-            const excelPath = path.join(__dirname, '..', excelFilename);
-
             try {
-                await workbook.xlsx.writeFile(excelPath);
-                res.download(excelPath, excelFilename, (err) => {
-                    if (err) console.error('Error downloading the file:', err);
-                    fs.unlink(excelPath, () => {});
-                });
+                res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(excelFilename)}`);
+                await workbook.xlsx.write(res);
+                res.end();
             } catch (writeErr) {
-                console.error('Error writing Excel file:', writeErr);
-                res.status(500).send('匯出 Excel 失敗');
+                next(writeErr);
             }
         });
     });
 });
 
-module.exports = router;
+return router;
+};
