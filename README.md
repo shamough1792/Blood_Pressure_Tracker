@@ -2,7 +2,7 @@
 
 > 專為家庭與長輩設計的多使用者血壓記錄網站，支援月曆、趨勢統計、Excel 匯出、管理後台及 Docker 部署。
 
-[![Latest Release](https://img.shields.io/badge/version-v2.9.0-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.9.0)
+[![Latest Release](https://img.shields.io/badge/version-v2.10.0-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.10.0)
 [![Docker Image](https://img.shields.io/badge/GHCR-blood__pressure__tracker-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
 ![MariaDB](https://img.shields.io/badge/MariaDB-%3E%3D10.6-003545?style=flat&logo=mariadb)
@@ -40,7 +40,7 @@
 ~~~yaml
 services:
   app:
-    image: ghcr.io/shamough1792/blood_pressure_tracker:2.9.0
+    image: ghcr.io/shamough1792/blood_pressure_tracker:2.10.0
     ports:
       - "3000:3000"
     environment:
@@ -66,7 +66,7 @@ docker compose up -d
 - 使用者入口：<http://localhost:3000>
 - 管理後台：<http://localhost:3000/admin>
 
-> 正式環境建議固定使用完整版本標籤（例如 <code>2.9.0</code>），確認升級後再更新；<code>latest</code> 會隨最新正式版移動。
+> 正式環境建議固定使用完整版本標籤（例如 <code>2.10.0</code>），確認升級後再更新；<code>latest</code> 會隨最新正式版移動。
 
 ### 從原始碼建置 Docker image
 
@@ -100,6 +100,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ~~~
 
 若 <code>ADMIN_USER</code>、<code>ADMIN_PASSWORD</code> 或 <code>SESSION_SECRET</code> 未設定，服務會拒絕啟動。
+Production 環境亦必須提供 <code>DB_HOST</code>、<code>DB_USER</code>、<code>DB_PASSWORD</code> 與 <code>DB_NAME</code>；不再使用內建資料庫預設值。
 
 ## 管理後台與備份
 
@@ -107,6 +108,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 - 管理使用者及血壓記錄。
 - 依使用者、日期及血壓條件篩選記錄。
+- 以串流方式匯出 CSV，每次最多 10,000 筆。
 - 查看以伺服器日期計算的今日記錄與指定使用者最近 7 日統計。
 - 下載 JSON 或舊版 SQL 備份。
 - 預覽 JSON 匯入結果，再以資料庫交易寫入。
@@ -152,7 +154,7 @@ JSON 是目前建議的備份格式，檔案包含格式版本與 SHA-256 checks
 
 ## 既有資料庫升級
 
-升級前請先備份資料庫。從較早版本升級至 <code>2.9.0</code> 時，請套用記錄查詢索引：
+升級前請先備份資料庫。從早於 <code>2.9.0</code> 的版本升級時，請確認已套用記錄查詢索引：
 
 ~~~bash
 mysql -h <DB_HOST> -u <DB_USER> -p <DB_NAME> < mariadb/migration-002-add-record-indexes.sql
@@ -192,6 +194,7 @@ npm test
 
 | 版本 | 重點更新 |
 | --- | --- |
+| [2.10.0](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.10.0) | 後台警告與手機版體驗改善、移除資料庫預設憑證、CSV 串流限量匯出、Portal SQL 聚合查詢 |
 | [2.9.0](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.9.0) | 管理後台可靠性與安全、JSON 備份、健康檢查、近期統計及 CI/CD |
 | [2.8.7](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.7) | 管理後台篩選、分頁與操作體驗 |
 | [2.8.6](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.6) | 今日記錄改以伺服器日期計算 |
