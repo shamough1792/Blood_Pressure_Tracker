@@ -180,6 +180,34 @@ body {
     text-align: center;
 }
 
+.form-error {
+    width: min(100%, 360px);
+    margin: 0 auto 8px;
+    padding: 10px 14px;
+    border: 2px solid #c62828;
+    border-radius: 10px;
+    background: #fff5f5;
+    color: #b71c1c;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.45;
+    text-align: center;
+}
+
+.form-group-error input,
+.form-group-error select,
+.form-control-error {
+    border: 2px solid #c62828 !important;
+    box-shadow: 0 0 0 4px rgba(198, 40, 40, 0.12);
+}
+
+.form-group .field-error {
+    width: 100%;
+    min-height: 0;
+    margin-top: 6px;
+    text-align: left;
+}
+
 /* 隱藏 number input 的上下箭頭 */
 .step-input::-webkit-outer-spin-button,
 .step-input::-webkit-inner-spin-button {

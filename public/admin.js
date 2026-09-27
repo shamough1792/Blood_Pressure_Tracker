@@ -19,6 +19,16 @@
         showToast(prefix + '：' + error.message, 'error');
     }
 
+    function showFieldError(inputId, errorId, message) {
+        const input = byId(inputId);
+        const error = byId(errorId);
+        if (input) input.classList.toggle('admin-field-invalid', Boolean(message));
+        if (error) {
+            error.textContent = message || '';
+            error.hidden = !message;
+        }
+    }
+
     function showToast(message, type) {
         const region = byId('adminToastRegion');
         if (!region) return;
@@ -43,14 +53,21 @@
 
     const addForm = byId('addForm');
     if (addForm) {
+        byId('newName').addEventListener('input', () => showFieldError('newName', 'addUserError', ''));
         addForm.addEventListener('submit', async event => {
             event.preventDefault();
+            const name = byId('newName').value.trim();
+            if (!name) {
+                showFieldError('newName', 'addUserError', '請輸入使用者姓名');
+                byId('newName').focus();
+                return;
+            }
             const button = addForm.querySelector('button[type=submit]');
             button.disabled = true;
             try {
-                await api('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: byId('newName').value.trim(), color: byId('newColor').value }) });
+                await api('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color: byId('newColor').value }) });
                 window.location.reload();
-            } catch (error) { showError('新增失敗', error); button.disabled = false; }
+            } catch (error) { showFieldError('newName', 'addUserError', error.message); button.disabled = false; }
         });
     }
 
@@ -73,12 +90,13 @@
         editModal.addEventListener('click', event => { if (event.target === editModal) closeEdit(); });
         document.addEventListener('keydown', event => { if (event.key === 'Escape') closeEdit(); });
         byId('closeEdit').addEventListener('click', closeEdit);
+        byId('editName').addEventListener('input', () => showFieldError('editName', 'editUserError', ''));
         byId('saveEdit').addEventListener('click', async () => {
             const button = byId('saveEdit'); button.disabled = true;
             try {
                 await api('/api/users/' + encodeURIComponent(byId('editId').value), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: byId('editName').value.trim(), color: byId('editColor').value }) });
                 window.location.reload();
-            } catch (error) { showError('編輯失敗', error); button.disabled = false; }
+            } catch (error) { showFieldError('editName', 'editUserError', error.message); button.disabled = false; }
         });
     }
 
@@ -147,7 +165,7 @@
         byId('confirmImportBtn').hidden = true;
         const formData = new FormData(); formData.append('backupFile', file); formData.append('user_id', pendingUserId);
         const button = byId('importBtn'), result = byId('importResult');
-        button.disabled = true; button.textContent = '匯入中…'; result.hidden = true;
+        button.disabled = true; button.textContent = '匯入中…'; result.hidden = true; result.classList.remove('admin-result-error');
         try {
             const response = await fetch('/api/import-backup/preview', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: formData });
             if (response.status === 401) { window.location.href = '/admin/login'; return; }
@@ -155,9 +173,9 @@
             const payload = isJson ? await response.json() : await response.text();
             const message = isJson ? payload.error : payload;
             if (!response.ok) throw new Error(message || '伺服器暫時無法處理請求');
-            result.textContent = `備份共 ${payload.total} 筆，可匯入 ${payload.valid} 筆，略過 ${payload.skipped} 筆。`; result.hidden = false;
+            result.classList.remove('admin-result-error'); result.textContent = `備份共 ${payload.total} 筆，可匯入 ${payload.valid} 筆，略過 ${payload.skipped} 筆。`; result.hidden = false;
             byId('confirmImportBtn').hidden = false;
-        } catch (error) { pendingBackup = null; pendingUserId = null; result.textContent = '匯入失敗：' + error.message; result.hidden = false; }
+        } catch (error) { pendingBackup = null; pendingUserId = null; result.classList.add('admin-result-error'); result.textContent = '匯入失敗：' + error.message; result.hidden = false; }
         finally { button.disabled = false; button.textContent = '檢查備份'; }
     });
 
@@ -172,7 +190,7 @@
             if (!response.ok) throw new Error(payload.error || '匯入失敗');
             showToast(`匯入完成：成功 ${payload.imported} 筆，略過 ${payload.skipped} 筆`);
             confirmImportBtn.hidden = true;
-        } catch (error) { showError('匯入失敗', error); }
+        } catch (error) { const result = byId('importResult'); result.classList.add('admin-result-error'); result.textContent = '匯入失敗：' + error.message; result.hidden = false; }
         finally { confirmImportBtn.disabled = false; }
     });
 

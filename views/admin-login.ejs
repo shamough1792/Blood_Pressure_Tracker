@@ -32,17 +32,18 @@
                     <h2 id="loginTitle">歡迎回來</h2>
                     <p>請輸入管理員帳號與密碼以繼續。</p>
                 </div>
-                <% if (typeof error !== 'undefined' && error) { %>
-                <div class="login-error" role="alert">帳號或密碼不正確，請再試一次。</div>
+                <% if (typeof error !== 'undefined' && error === 'too_many_attempts') { %>
+                <div class="login-error" role="alert">嘗試次數過多，請稍後再試。</div>
                 <% } %>
                 <form class="admin-login-form" method="POST" action="/admin/login">
-                    <div class="admin-login-field">
+                    <div class="admin-login-field <%= typeof error !== 'undefined' && error && error !== 'too_many_attempts' ? 'admin-login-field-invalid' : '' %>">
                         <label for="adminUsername">管理員帳號</label>
                         <input id="adminUsername" type="text" name="username" placeholder="輸入帳號" required autofocus autocomplete="username">
                     </div>
-                    <div class="admin-login-field">
+                    <div class="admin-login-field <%= typeof error !== 'undefined' && error && error !== 'too_many_attempts' ? 'admin-login-field-invalid' : '' %>">
                         <label for="adminPassword">密碼</label>
                         <input id="adminPassword" type="password" name="password" placeholder="輸入密碼" required autocomplete="current-password">
+                        <% if (typeof error !== 'undefined' && error && error !== 'too_many_attempts') { %><div class="field-error login-field-error" role="alert">帳號或密碼不正確，請再試一次。</div><% } %>
                     </div>
                     <button type="submit" class="admin-login-submit">登入管理後台</button>
                 </form>

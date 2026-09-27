@@ -19,23 +19,26 @@
         </div>
 
         <div class="form-page">
-            <form action="/update/<%= record.id %>" method="POST"><input type="hidden" name="userId" value="<%= typeof userId !== 'undefined' ? userId : 1 %>"><input type="hidden" name="name" value="<%= typeof userName !== 'undefined' ? userName : '' %>"><input type="hidden" name="_actionToken" value="<%= typeof actionToken !== 'undefined' ? actionToken : '' %>">
-                <div class="form-group">
+            <form action="/update/<%= record.id %>" method="POST" novalidate><input type="hidden" name="userId" value="<%= typeof userId !== 'undefined' ? userId : 1 %>"><input type="hidden" name="name" value="<%= typeof userName !== 'undefined' ? userName : '' %>"><input type="hidden" name="_actionToken" value="<%= typeof actionToken !== 'undefined' ? actionToken : '' %>">
+                <div class="form-group" data-field="high_pressure">
                     <label for="high_pressure">高壓</label>
                     <input type="number" id="high_pressure" name="high_pressure"
                            value="<%= record.high_pressure %>" required min="50" max="250">
+                    <div class="field-error" id="highPressureError" role="alert" aria-live="polite"></div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" data-field="low_pressure">
                     <label for="low_pressure">低壓</label>
                     <input type="number" id="low_pressure" name="low_pressure"
                            value="<%= record.low_pressure %>" required min="30" max="150">
+                    <div class="field-error" id="lowPressureError" role="alert" aria-live="polite"></div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" data-field="heartbeat">
                     <label for="heartbeat">心跳</label>
                     <input type="number" id="heartbeat" name="heartbeat"
                            value="<%= record.heartbeat %>" required min="30" max="200">
+                    <div class="field-error" id="heartbeatError" role="alert" aria-live="polite"></div>
                 </div>
 
                 <div class="form-group">
@@ -59,6 +62,48 @@
             </form>
         </div>
     </div>
+    <script>
+        (function () {
+            const form = document.querySelector('form[novalidate]');
+            const fields = [
+                { id: 'high_pressure', error: 'highPressureError', name: '高壓', min: 50, max: 250 },
+                { id: 'low_pressure', error: 'lowPressureError', name: '低壓', min: 30, max: 150 },
+                { id: 'heartbeat', error: 'heartbeatError', name: '心跳', min: 30, max: 200 }
+            ];
+            function showModifyError(field, message) {
+                const input = document.getElementById(field.id);
+                const group = input.closest('.form-group');
+                input.classList.toggle('form-control-error', Boolean(message));
+                group.classList.toggle('form-group-error', Boolean(message));
+                document.getElementById(field.error).textContent = message || '';
+            }
+            function validate() {
+                let valid = true;
+                fields.forEach(function (field) {
+                    const value = Number(document.getElementById(field.id).value);
+                    let message = '';
+                    if (!Number.isInteger(value)) message = '請輸入' + field.name;
+                    else if (value < field.min || value > field.max) message = field.name + '範圍應在 ' + field.min + ' ~ ' + field.max + ' 之間';
+                    showModifyError(field, message);
+                    if (message) valid = false;
+                });
+                const high = Number(document.getElementById('high_pressure').value);
+                const low = Number(document.getElementById('low_pressure').value);
+                if (valid && low >= high) {
+                    showModifyError(fields[1], '低壓不能大於或等於高壓');
+                    valid = false;
+                }
+                return valid;
+            }
+            fields.forEach(function (field) {
+                document.getElementById(field.id).addEventListener('input', function () { showModifyError(field, ''); });
+            });
+            form.addEventListener('submit', function (event) {
+                if (!validate()) event.preventDefault();
+            });
+            window.showModifyError = showModifyError;
+        }());
+    </script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js');

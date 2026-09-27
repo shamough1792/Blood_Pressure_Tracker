@@ -65,6 +65,14 @@ test('管理後台血壓記錄提供多條件篩選欄位', async () => {
     assert.match(template, /recordStatusFilter/);
     assert.match(template, /recordFilterReset/);
     assert.match(html, /data-status="high"/);
+    assert.match(template, /admin-filter-group/);
+    assert.match(template, /data-label="量測時間"/);
+    assert.match(template, /data-label="收縮壓"/);
+    const styles = fs.readFileSync('public/admin.css', 'utf8');
+    assert.match(styles, /admin-record-filters input\[type=date\]\{box-sizing:border-box/);
+    assert.match(styles, /\.admin-record-filters input\[type=date\]\{min-width:0\}/);
+    assert.match(styles, /@supports \(-webkit-touch-callout:none\)/);
+    assert.match(styles, /input\[type=date\]\{display:block;width:100%;min-width:0;max-width:100%;height:42px/);
 });
 
 test('管理後台分頁由伺服器輸出精簡頁碼與前後頁', async () => {

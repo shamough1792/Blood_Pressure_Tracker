@@ -32,6 +32,8 @@
             <div class="progress-label" id="stepLabel">步驟 1/4</div>
         </div>
 
+        <div class="form-error" id="formError" role="alert" aria-live="polite" hidden></div>
+
         <form id="bpForm" action="/add" method="POST" style="flex:1;display:flex;flex-direction:column;">
             <input type="hidden" name="_actionToken" value="<%= typeof actionToken !== 'undefined' ? actionToken : '' %>">
             <!-- 隱藏欄位：自動填入 -->
@@ -221,6 +223,14 @@
             if (error) error.textContent = '';
         }
 
+        function showFormError(message) {
+            const error = document.getElementById('formError');
+            if (error) {
+                error.textContent = message;
+                error.hidden = !message;
+            }
+        }
+
         ['highPressure', 'lowPressure', 'heartbeat'].forEach(function(fieldId) {
             document.getElementById(fieldId).addEventListener('input', function() {
                 clearFieldError(fieldId);
@@ -327,12 +337,15 @@
                 body: new URLSearchParams(formData)
             }).then(function(resp) {
                 if (resp.ok) {
+                    showFormError('');
                     showSuccess();
                 } else {
-                    alert('儲存失敗，請重試');
+                    resp.text().then(function(message) {
+                        showFormError(message || '儲存失敗，請重試');
+                    });
                 }
             }).catch(function() {
-                alert('網路錯誤，請重試');
+                showFormError('網路錯誤，請檢查連線後再試。');
             });
         }
 
@@ -351,6 +364,7 @@
             document.querySelector('.progress-container').style.display = 'block';
             document.getElementById('successScreen').classList.remove('active');
             document.getElementById('bpForm').reset();
+            showFormError('');
 
             // 關閉日期編輯器
             document.getElementById('dateTimeEditor').classList.remove('show');
@@ -393,7 +407,7 @@
                     deferredPrompt = null;
                 });
             } else {
-                alert('請在瀏覽器選單中選擇「加入主畫面」來安裝此應用程式。');
+                showFormError('請在瀏覽器選單中選擇「加入主畫面」來安裝此應用程式。');
             }
         }
     </script>
