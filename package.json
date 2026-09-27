@@ -1,6 +1,6 @@
 {
   "name": "blood-pressure-tracker",
-  "version": "2.10.0",
+  "version": "2.10.1",
   "main": "index.js",
   "scripts": {
     "start": "node server.js",

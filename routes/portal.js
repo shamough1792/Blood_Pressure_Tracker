@@ -31,10 +31,10 @@ router.get('/bp/:userId', (req, res) => {
 // 記錄頁（月曆檢視）
 router.get('/records', (req, res, next) => {
     const userId = req.query.userId || 1;
-    const monthSql = "SELECT DISTINCT DATE_FORMAT(recorded_at, '%Y-%m') AS year_month FROM records WHERE user_id = ? ORDER BY year_month DESC";
+    const monthSql = "SELECT DISTINCT DATE_FORMAT(recorded_at, '%Y-%m') AS record_month FROM records WHERE user_id = ? ORDER BY record_month DESC";
     db.query(monthSql, [userId], (monthErr, monthRows) => {
         if (monthErr) return next(monthErr);
-        const months = monthRows.map(row => row.year_month);
+        const months = monthRows.map(row => row.record_month);
         const selectedMonth = months.includes(req.query.yearMonth) ? req.query.yearMonth : (months[0] || null);
         const groupedRecords = Object.fromEntries(months.map(month => [month, []]));
         const userName = req.query.name || '';

@@ -2,7 +2,7 @@
 
 > 專為家庭與長輩設計的多使用者血壓記錄網站，支援月曆、趨勢統計、Excel 匯出、管理後台及 Docker 部署。
 
-[![Latest Release](https://img.shields.io/badge/version-v2.10.0-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.10.0)
+[![Latest Release](https://img.shields.io/badge/version-v2.10.1-green?style=flat&logo=github)](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.10.1)
 [![Docker Image](https://img.shields.io/badge/GHCR-blood__pressure__tracker-blue?style=flat&logo=docker)](https://github.com/shamough1792/Blood_Pressure_Tracker/pkgs/container/blood_pressure_tracker)
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-brightgreen?style=flat&logo=nodedotjs)
 ![MariaDB](https://img.shields.io/badge/MariaDB-%3E%3D10.6-003545?style=flat&logo=mariadb)
@@ -40,7 +40,7 @@
 ~~~yaml
 services:
   app:
-    image: ghcr.io/shamough1792/blood_pressure_tracker:2.10.0
+    image: ghcr.io/shamough1792/blood_pressure_tracker:2.10.1
     ports:
       - "3000:3000"
     environment:
@@ -66,7 +66,7 @@ docker compose up -d
 - 使用者入口：<http://localhost:3000>
 - 管理後台：<http://localhost:3000/admin>
 
-> 正式環境建議固定使用完整版本標籤（例如 <code>2.10.0</code>），確認升級後再更新；<code>latest</code> 會隨最新正式版移動。
+> 正式環境建議固定使用完整版本標籤（例如 <code>2.10.1</code>），確認升級後再更新；<code>latest</code> 會隨最新正式版移動。
 
 ### 從原始碼建置 Docker image
 
@@ -194,6 +194,7 @@ npm test
 
 | 版本 | 重點更新 |
 | --- | --- |
+| [2.10.1](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.10.1) | 修正 MariaDB 月份別名造成查看紀錄頁無法開啟的問題 |
 | [2.10.0](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.10.0) | 後台警告與手機版體驗改善、移除資料庫預設憑證、CSV 串流限量匯出、Portal SQL 聚合查詢 |
 | [2.9.0](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.9.0) | 管理後台可靠性與安全、JSON 備份、健康檢查、近期統計及 CI/CD |
 | [2.8.7](https://github.com/shamough1792/Blood_Pressure_Tracker/releases/tag/v2.8.7) | 管理後台篩選、分頁與操作體驗 |
