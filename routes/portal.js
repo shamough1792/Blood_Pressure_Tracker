@@ -31,30 +31,32 @@ router.get('/bp/:userId', (req, res) => {
 // 記錄頁（月曆檢視）
 router.get('/records', (req, res, next) => {
     const userId = req.query.userId || 1;
-    db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at DESC', [userId], (err, results) => {
-        if (err) return next(err);
-
-        // Group records by year and month
-        const groupedRecords = results.reduce((acc, record) => {
-            const date = new Date(record.recorded_at);
-            const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-            if (!acc[yearMonth]) {
-                acc[yearMonth] = [];
-            }
-            acc[yearMonth].push({
-                ...record,
-                formattedDate: date.toLocaleDateString('zh-HK', {
-                    year: 'numeric', month: 'long', day: 'numeric'
-                }) + ' ' + (date.getHours() < 12 ? '上午' : '下午')
-            });
-            return acc;
-        }, {});
-
-        const selectedMonth = req.query.yearMonth || (Object.keys(groupedRecords).length ? Object.keys(groupedRecords)[0] : null);
+    const monthSql = "SELECT DISTINCT DATE_FORMAT(recorded_at, '%Y-%m') AS year_month FROM records WHERE user_id = ? ORDER BY year_month DESC";
+    db.query(monthSql, [userId], (monthErr, monthRows) => {
+        if (monthErr) return next(monthErr);
+        const months = monthRows.map(row => row.year_month);
+        const selectedMonth = months.includes(req.query.yearMonth) ? req.query.yearMonth : (months[0] || null);
+        const groupedRecords = Object.fromEntries(months.map(month => [month, []]));
         const userName = req.query.name || '';
+        if (!selectedMonth) return res.render('records', { groupedRecords, selectedMonth: null, titleSuffix: process.env.TITLE_SUFFIX || '', userId, userName });
 
-        res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '', userId, userName });
+        const nextMonth = new Date(`${selectedMonth}-01T00:00:00`);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        const nextMonthValue = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01`;
+        const recordsSql = 'SELECT * FROM records WHERE user_id = ? AND recorded_at >= ? AND recorded_at < ? ORDER BY recorded_at DESC';
+        db.query(recordsSql, [userId, `${selectedMonth}-01`, nextMonthValue], (recordErr, results) => {
+            if (recordErr) return next(recordErr);
+            groupedRecords[selectedMonth] = results.map(record => {
+                const date = new Date(record.recorded_at);
+                return {
+                    ...record,
+                    formattedDate: date.toLocaleDateString('zh-HK', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    }) + ' ' + (date.getHours() < 12 ? '上午' : '下午')
+                };
+            });
+            res.render('records', { groupedRecords, selectedMonth, titleSuffix: process.env.TITLE_SUFFIX || '', userId, userName });
+        });
     });
 });
 
@@ -62,7 +64,10 @@ router.get('/records', (req, res, next) => {
 router.get('/records/day', (req, res, next) => {
     const userId = req.query.userId || 1;
     const date = req.query.date || '';
-    db.query('SELECT * FROM records WHERE user_id = ? AND DATE(recorded_at) = ? ORDER BY recorded_at ASC', [userId, date], (err, records) => {
+    const nextDate = date ? new Date(`${date}T00:00:00`) : null;
+    if (nextDate) nextDate.setDate(nextDate.getDate() + 1);
+    const nextDateValue = nextDate ? `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}` : '';
+    db.query('SELECT * FROM records WHERE user_id = ? AND recorded_at >= ? AND recorded_at < ? ORDER BY recorded_at ASC', [userId, `${date} 00:00:00`, `${nextDateValue} 00:00:00`], (err, records) => {
         if (err) return next(err);
         const userName = req.query.name || '';
         const day = date ? new Date(`${date}T12:00:00`) : null;
@@ -83,68 +88,41 @@ router.get('/stats', (req, res, next) => {
     const userId = req.query.userId || 1;
     const range = req.query.range === '0' ? 0 : (parseInt(req.query.range) || 6);
     const userName = req.query.name || '';
+    const now = new Date();
+    const cutoff = range === 0 ? null : new Date(now.getFullYear(), now.getMonth() - (range - 1), 1);
+    const dateClause = cutoff ? ' AND recorded_at >= ?' : '';
+    const baseParams = cutoff ? [userId, cutoff] : [userId];
+    const summarySql = `SELECT COUNT(*) AS total, ROUND(AVG(high_pressure)) AS avg_high, ROUND(AVG(low_pressure)) AS avg_low, ROUND(AVG(heartbeat)) AS avg_heart, SUM(high_pressure >= 140 OR low_pressure >= 90) AS high_count, SUM(high_pressure < 90 OR low_pressure < 60) AS low_count, SUM(high_pressure < 140 AND low_pressure < 90 AND high_pressure >= 90 AND low_pressure >= 60) AS normal_count FROM records WHERE user_id = ?${dateClause}`;
+    const chartSql = `SELECT DATE_FORMAT(recorded_at, '%c/%e') AS label, ROUND(AVG(high_pressure)) AS high, ROUND(AVG(low_pressure)) AS low, ROUND(AVG(heartbeat)) AS heart FROM records WHERE user_id = ?${dateClause} GROUP BY DATE(recorded_at) ORDER BY DATE(recorded_at) ASC`;
+    const recentSql = `SELECT high_pressure, low_pressure, heartbeat, recorded_at FROM records WHERE user_id = ?${dateClause} ORDER BY recorded_at DESC LIMIT 7`;
 
-    db.query('SELECT * FROM records WHERE user_id = ? ORDER BY recorded_at ASC', [userId], (err, results) => {
-        if (err) return next(err);
-
-        const now = new Date();
-        const cutoff = range === 0
-            ? new Date(0) // 全部：唔限時
-            : new Date(now.getFullYear(), now.getMonth() - (range - 1), 1);
-
-        const filtered = results.filter(r => new Date(r.recorded_at) >= cutoff);
-        const healthOverview = filtered.length ? buildHealthOverview(filtered) : null;
-
-        // 摘要統計
-        const stats = {
-            total: filtered.length,
-            avgHigh: 0, avgLow: 0, avgHeart: 0,
-            highCount: 0, lowCount: 0, normalCount: 0
-        };
-        filtered.forEach(r => {
-            stats.avgHigh += r.high_pressure;
-            stats.avgLow += r.low_pressure;
-            stats.avgHeart += r.heartbeat;
-            if (r.high_pressure >= 140 || r.low_pressure >= 90) stats.highCount++;
-            else if (r.high_pressure < 90 || r.low_pressure < 60) stats.lowCount++;
-            else stats.normalCount++;
-        });
-        if (stats.total > 0) {
-            stats.avgHigh = Math.round(stats.avgHigh / stats.total);
-            stats.avgLow = Math.round(stats.avgLow / stats.total);
-            stats.avgHeart = Math.round(stats.avgHeart / stats.total);
-        }
-        stats.normalRate = stats.total > 0 ? Math.round(stats.normalCount / stats.total * 100) : 0;
-
-        // 圖表資料：按日聚合平均（早/晚平均成 1 日 1 點）
-        const dayMap = {};
-        filtered.forEach(r => {
-            const d = new Date(r.recorded_at);
-            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-            if (!dayMap[key]) {
-                dayMap[key] = { label: `${d.getMonth() + 1}/${d.getDate()}`, sumH: 0, sumL: 0, sumB: 0, n: 0 };
-            }
-            dayMap[key].sumH += r.high_pressure;
-            dayMap[key].sumL += r.low_pressure;
-            dayMap[key].sumB += r.heartbeat;
-            dayMap[key].n++;
-        });
-        let chartData = Object.values(dayMap).map(x => ({
-            label: x.label,
-            high: Math.round(x.sumH / x.n),
-            low: Math.round(x.sumL / x.n),
-            heart: Math.round(x.sumB / x.n)
-        }));
-
-        // 日數仍太多：平均抽樣至最多 90 點（保留最後一點）
-        if (chartData.length > 90) {
-            const stride = Math.ceil(chartData.length / 90);
-            chartData = chartData.filter((_, i) => i % stride === 0 || i === chartData.length - 1);
-        }
-
-        res.render('stats', {
-            stats, chartData, healthOverview, range, userId, userName,
-            titleSuffix: process.env.TITLE_SUFFIX || ''
+    db.query(summarySql, baseParams, (summaryErr, summaryRows) => {
+        if (summaryErr) return next(summaryErr);
+        db.query(chartSql, baseParams, (chartErr, chartRows) => {
+            if (chartErr) return next(chartErr);
+            db.query(recentSql, baseParams, (recentErr, recentRows) => {
+                if (recentErr) return next(recentErr);
+                const summary = summaryRows[0] || {};
+                const total = Number(summary.total) || 0;
+                const normalCount = Number(summary.normal_count) || 0;
+                const stats = {
+                    total,
+                    avgHigh: Number(summary.avg_high) || 0,
+                    avgLow: Number(summary.avg_low) || 0,
+                    avgHeart: Number(summary.avg_heart) || 0,
+                    highCount: Number(summary.high_count) || 0,
+                    lowCount: Number(summary.low_count) || 0,
+                    normalCount,
+                    normalRate: total ? Math.round(normalCount / total * 100) : 0
+                };
+                let chartData = chartRows.map(row => ({ label: row.label, high: Number(row.high) || 0, low: Number(row.low) || 0, heart: Number(row.heart) || 0 }));
+                if (chartData.length > 90) {
+                    const stride = Math.ceil(chartData.length / 90);
+                    chartData = chartData.filter((_, i) => i % stride === 0 || i === chartData.length - 1);
+                }
+                const healthOverview = recentRows.length ? buildHealthOverview(recentRows.reverse()) : null;
+                res.render('stats', { stats, chartData, healthOverview, range, userId, userName, titleSuffix: process.env.TITLE_SUFFIX || '' });
+            });
         });
     });
 });

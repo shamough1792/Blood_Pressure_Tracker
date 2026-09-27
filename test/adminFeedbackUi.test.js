@@ -74,3 +74,14 @@ test('管理後台表單錯誤顯示於欄位附近', () => {
     assert.match(users, /id="editUserError"/);
     assert.match(styles, /\.admin-field-invalid/);
 });
+
+test('CSV 匯出限制筆數並使用串流輸出', () => {
+    const router = fs.readFileSync('routes/admin.js', 'utf8');
+    assert.match(router, /const CSV_EXPORT_MAX_ROWS = 10000/);
+    assert.match(router, /Number\(rows\[0\]\?\.total\) > CSV_EXPORT_MAX_ROWS/);
+    assert.match(router, /res\.status\(413\)/);
+    assert.match(router, /ORDER BY r\.recorded_at \$\{direction\}, r\.id \$\{direction\} LIMIT \?/);
+    assert.match(router, /query\.stream\(\)/);
+    assert.match(router, /stream\.on\('data'/);
+    assert.match(router, /res\.on\('drain', \(\) => stream\.resume\(\)\)/);
+});

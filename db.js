@@ -1,10 +1,16 @@
 const mysql = require('mysql2');
 
+const requiredDbVariables = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missingDbVariables = requiredDbVariables.filter(name => !String(process.env[name] || '').trim());
+if (missingDbVariables.length && process.env.NODE_ENV === 'production') {
+    throw new Error(`缺少必要資料庫環境變數：${missingDbVariables.join(', ')}`);
+}
+
 const db = mysql.createPool({
-    host: process.env.DB_HOST || '192.168.1.222',
-    user: process.env.DB_USER || 'tracker_user',
-    password: process.env.DB_PASSWORD || 'mypassword',
-    database: process.env.DB_NAME || 'blood_test',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: Math.max(2, Number.parseInt(process.env.DB_POOL_SIZE, 10) || 10),
     queueLimit: 0,

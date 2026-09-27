@@ -8,6 +8,8 @@ const { createBackup, parseBackup, previewBackup } = require('../lib/backup');
 const { withTransaction } = require('../lib/db-transaction');
 const { createSessionToken, extractToken, COOKIE_NAME } = require('../middleware/adminAuth');
 
+const CSV_EXPORT_MAX_ROWS = 10000;
+
 function isHttpsRequest(req) {
     const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
         .split(',')[0]
@@ -176,14 +178,34 @@ module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
 
     router.get('/admin/export/records.csv', (req, res) => {
         const filters = parseRecordFilters(req.query);
-        const sql = `SELECT r.recorded_at, u.name AS user_name, r.high_pressure, r.low_pressure, r.heartbeat FROM records r LEFT JOIN users u ON u.id = r.user_id ${filters.where} ORDER BY r.recorded_at ${filters.sort === 'oldest' ? 'ASC' : 'DESC'}, r.id ${filters.sort === 'oldest' ? 'ASC' : 'DESC'}`;
-        db.query(sql, filters.params, (err, records) => {
-            if (err) return res.status(500).send('匯出失敗');
+        const direction = filters.sort === 'oldest' ? 'ASC' : 'DESC';
+        const sql = `SELECT r.recorded_at, u.name AS user_name, r.high_pressure, r.low_pressure, r.heartbeat FROM records r LEFT JOIN users u ON u.id = r.user_id ${filters.where} ORDER BY r.recorded_at ${direction}, r.id ${direction} LIMIT ?`;
+        const countSql = `SELECT COUNT(*) AS total FROM records r ${filters.where}`;
+        db.query(countSql, filters.params, (countErr, rows) => {
+            if (countErr) return res.status(500).send('匯出失敗');
+            if (Number(rows[0]?.total) > CSV_EXPORT_MAX_ROWS) {
+                return res.status(413).send(`符合條件的記錄超過 ${CSV_EXPORT_MAX_ROWS} 筆，請縮小日期或使用者範圍後再匯出。`);
+            }
+
+            const query = db.query(sql, filters.params.concat(CSV_EXPORT_MAX_ROWS));
+            if (!query || typeof query.stream !== 'function') return res.status(500).send('匯出失敗');
             const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-            const csv = ['量測時間,使用者,收縮壓,舒張壓,心跳', ...records.map(r => [r.recorded_at, r.user_name || '已移除使用者', r.high_pressure, r.low_pressure, r.heartbeat].map(escape).join(','))].join('\n');
+            const toCsvRow = record => [record.recorded_at, record.user_name || '已移除使用者', record.high_pressure, record.low_pressure, record.heartbeat].map(escape).join(',');
             res.setHeader('Content-Type', 'text/csv; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(`血壓記錄_${formatDateForFilename(new Date())}.csv`)}`);
-            res.send(`\uFEFF${csv}`);
+            res.write('\uFEFF量測時間,使用者,收縮壓,舒張壓,心跳\n');
+
+            const stream = query.stream();
+            stream.on('data', record => {
+                if (!res.write(toCsvRow(record) + '\n')) stream.pause();
+            });
+            res.on('drain', () => stream.resume());
+            res.on('close', () => stream.destroy());
+            stream.on('end', () => res.end());
+            stream.on('error', error => {
+                if (!res.headersSent) return res.status(500).send('匯出失敗');
+                res.destroy(error);
+            });
         });
     });
 
