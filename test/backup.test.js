@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createBackup, parseBackup, previewBackup } = require('../lib/backup');
+const { createBackup, parseBackup, previewBackup, previewFullBackup } = require('../lib/backup');
 
 test('JSON 備份包含版本、checksum 並可驗證還原', () => {
     const backup = createBackup({
@@ -36,4 +36,19 @@ test('匯入預覽只接受合理血壓資料並回報略過筆數', () => {
     assert.equal(result.validRows.length, 1);
     assert.equal(result.skipped, 1);
     assert.equal(result.validRows[0][4], 9);
+});
+
+test('完整備份預覽保留原使用者對應並略過未知使用者', () => {
+    const backup = createBackup({
+        users: [{ id: 3, name: '甲', color: '#4CAF50' }],
+        records: [
+            { high_pressure: 120, low_pressure: 80, heartbeat: 70, recorded_at: '2026-09-25T02:00:00.000Z', user_id: 3 },
+            { high_pressure: 130, low_pressure: 85, heartbeat: 72, recorded_at: '2026-09-25T03:00:00.000Z', user_id: 9 }
+        ],
+        exportedAt: '2026-09-25T03:00:00.000Z', appVersion: '2.10.1'
+    });
+    const result = previewFullBackup(parseBackup(JSON.stringify(backup)));
+    assert.equal(result.validRows.length, 1);
+    assert.equal(result.validRows[0].sourceUser.name, '甲');
+    assert.equal(result.skipped, 1);
 });

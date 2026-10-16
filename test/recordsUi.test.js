@@ -65,6 +65,8 @@ test('管理後台血壓記錄提供多條件篩選欄位', async () => {
     assert.match(template, /recordStatusFilter/);
     assert.match(template, /recordFilterReset/);
     assert.match(html, /data-status="high"/);
+    assert.match(html, /aria-sort="descending"/);
+    assert.match(html, /目前由晚至早，切換為由早至晚/);
     assert.match(template, /admin-filter-group/);
     assert.match(template, /data-label="量測時間"/);
     assert.match(template, /data-label="收縮壓"/);
@@ -73,6 +75,16 @@ test('管理後台血壓記錄提供多條件篩選欄位', async () => {
     assert.match(styles, /\.admin-record-filters input\[type=date\]\{min-width:0\}/);
     assert.match(styles, /@supports \(-webkit-touch-callout:none\)/);
     assert.match(styles, /input\[type=date\]\{display:block;width:100%;min-width:0;max-width:100%;height:42px/);
+});
+
+test('記錄時間升冪使用 ascending 且排序連結保留篩選並回第一頁', async () => {
+    const html = await ejs.renderFile('views/admin-records.ejs', {
+        users: [], records: [], recordsTotal: 0, recordsPage: 1, recordsPageSize: 50,
+        recordFilters: { userId: '7', from: '2026-10-01', to: '2026-10-16', status: 'high', sort: 'oldest' }, paginationItems: [],
+        summary: { totalRecords: 0, todayRecords: 0 }, pageTitle: '血壓記錄', pageDescription: '', activePage: 'records', titleSuffix: '', appVersion: '2.10.1', csrfToken: 'token'
+    });
+    assert.match(html, /aria-sort="ascending"/);
+    assert.match(html, /user=7&amp;from=2026-10-01&amp;to=2026-10-16&amp;status=high&amp;sort=newest/);
 });
 
 test('管理後台分頁由伺服器輸出精簡頁碼與前後頁', async () => {

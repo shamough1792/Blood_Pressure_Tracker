@@ -4,7 +4,10 @@ const { version: appVersion } = require('../package.json');
 const { formatDateForFilename } = require('../lib/util');
 const { buildPaginationItems } = require('../lib/pagination');
 const { buildAdminOverview, buildAdminOverviewQuery } = require('../lib/admin-overview');
-const { createBackup, parseBackup, previewBackup } = require('../lib/backup');
+const { createBackup, parseBackup } = require('../lib/backup');
+const { parseRecordFilters } = require('../lib/admin-records');
+const { planImport, applyImport } = require('../lib/admin-import');
+const { writeAudit, writeFailure } = require('../lib/admin-audit');
 const { withTransaction } = require('../lib/db-transaction');
 const { createSessionToken, extractToken, COOKIE_NAME } = require('../middleware/adminAuth');
 
@@ -21,7 +24,7 @@ function isHttpsRequest(req) {
 module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
     const router = express.Router();
     const loginAttempts = new Map();
-    let lastBackupAt = null;
+    const actor = process.env.ADMIN_USER || 'admin';
     const validColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
     const validId = value => /^\d+$/.test(String(value)) && Number(value) > 0;
 
@@ -96,37 +99,20 @@ module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
         next();
     });
 
+    router.use(require('./admin-management')(db, actor));
+
     function loadAdminSummary(callback) {
         db.query('SELECT COUNT(*) AS total_records, SUM(recorded_at >= CURDATE()) AS today_records FROM records', callback);
     }
 
-    function parseRecordFilters(query) {
-        const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
-        const pageSize = Math.min(100, Math.max(10, Number.parseInt(query.pageSize, 10) || 50));
-        const userId = validId(query.user) ? String(query.user) : '';
-        const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-        const from = datePattern.test(String(query.from || '')) ? String(query.from) : '';
-        const to = datePattern.test(String(query.to || '')) ? String(query.to) : '';
-        const status = ['normal', 'high', 'low'].includes(query.status) ? query.status : '';
-        const sort = query.sort === 'oldest' ? 'oldest' : 'newest';
-        const where = [];
-        const params = [];
-        if (userId) { where.push('r.user_id = ?'); params.push(userId); }
-        if (from) { where.push('r.recorded_at >= ?'); params.push(`${from} 00:00:00`); }
-        if (to) { where.push('r.recorded_at <= ?'); params.push(`${to} 23:59:59`); }
-        if (status === 'high') where.push('(r.high_pressure >= 140 OR r.low_pressure >= 90)');
-        if (status === 'low') where.push('(r.high_pressure < 90 OR r.low_pressure < 60)');
-        if (status === 'normal') where.push('r.high_pressure < 140 AND r.low_pressure < 90 AND r.high_pressure >= 90 AND r.low_pressure >= 60');
-        return { page, pageSize, userId, from, to, status, sort, where: where.length ? `WHERE ${where.join(' AND ')}` : '', params };
-    }
-
     function loadFilteredRecords(filters, callback) {
         const direction = filters.sort === 'oldest' ? 'ASC' : 'DESC';
-        const offset = (filters.page - 1) * filters.pageSize;
         const countSql = `SELECT COUNT(*) AS total FROM records r ${filters.where}`;
-        const recordsSql = `SELECT r.id, r.high_pressure, r.low_pressure, r.heartbeat, r.recorded_at, r.user_id, u.name AS user_name FROM records r LEFT JOIN users u ON u.id = r.user_id ${filters.where} ORDER BY r.recorded_at ${direction}, r.id ${direction} LIMIT ? OFFSET ?`;
+        const recordsSql = `SELECT r.id, r.high_pressure, r.low_pressure, r.heartbeat, r.recorded_at, r.user_id, u.name AS user_name, (SELECT MAX(a.created_at) FROM admin_audit_logs a WHERE a.target_id = r.id AND a.action = 'record.edit' AND a.status = 'success') AS modified_at FROM records r LEFT JOIN users u ON u.id = r.user_id ${filters.where} ORDER BY r.recorded_at ${direction}, r.id ${direction} LIMIT ? OFFSET ?`;
         db.query(countSql, filters.params, (countErr, countRows) => {
             if (countErr) return callback(countErr);
+            filters.page = Math.min(filters.page, Math.max(1, Math.ceil(Number(countRows[0]?.total || 0) / filters.pageSize)));
+            const offset = (filters.page - 1) * filters.pageSize;
             db.query(recordsSql, filters.params.concat([filters.pageSize, offset]), (recordsErr, records) => {
                 if (recordsErr) return callback(recordsErr);
                 callback(null, { records, total: Number(countRows[0]?.total) || 0 });
@@ -146,7 +132,10 @@ module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
                 db.query(overviewQuery.sql, overviewQuery.params, (overviewErr, recentRecords) => {
                     if (overviewErr) return res.status(500).send('讀取近期統計失敗');
                     const summary = summaryRows[0] || { total_records: 0, today_records: 0 };
-                    res.render('admin', { pageTitle: '管理總覽', pageDescription: '快速查看使用者與血壓記錄的整體狀況。', activePage: 'overview', summary: { totalUsers: users.length, totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, overview: buildAdminOverview(recentRecords), overviewUsers: users, overviewUserId, lastBackupAt, titleSuffix: process.env.TITLE_SUFFIX || '' });
+                    db.query('SELECT created_at FROM backup_logs ORDER BY id DESC LIMIT 1', (backupErr, backups) => {
+                        if (backupErr) return res.status(500).send('讀取備份紀錄失敗，請確認已套用 migration-003');
+                        res.render('admin', { pageTitle: '管理總覽', pageDescription: '使用者與量測摘要。', activePage: 'overview', summary: { totalUsers: users.length, totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, overview: buildAdminOverview(recentRecords), overviewUsers: users, overviewUserId, lastBackupAt: backups[0]?.created_at || null, titleSuffix: process.env.TITLE_SUFFIX || '' });
+                    });
                 });
             });
         });
@@ -156,12 +145,13 @@ module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
         const usersSql = 'SELECT u.id, u.name, u.color, u.created_at, COUNT(r.id) AS record_count, MAX(r.recorded_at) AS last_recorded_at FROM users u LEFT JOIN records r ON r.user_id = u.id GROUP BY u.id, u.name, u.color, u.created_at ORDER BY u.id ASC';
         db.query(usersSql, (err, users) => {
             if (err) return res.status(500).send('讀取使用者資料失敗');
-            res.render('admin-users', { users, pageTitle: '使用者管理', pageDescription: '管理家庭成員帳號、識別色與使用者資料。', activePage: 'users', titleSuffix: process.env.TITLE_SUFFIX || '' });
+            res.render('admin-users', { users, pageTitle: '使用者管理', pageDescription: '管理家庭成員。', activePage: 'users', titleSuffix: process.env.TITLE_SUFFIX || '' });
         });
     });
 
     router.get('/admin/records', (req, res) => {
-        const filters = parseRecordFilters(req.query);
+        let filters;
+        try { filters = parseRecordFilters(req.query); } catch (error) { return res.status(400).send(error.message); }
         db.query('SELECT id, name, color FROM users ORDER BY id ASC', (userErr, users) => {
             if (userErr) return res.status(500).send('讀取使用者資料失敗');
             loadFilteredRecords(filters, (recordErr, result) => {
@@ -170,14 +160,15 @@ module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
                     if (summaryErr) return res.status(500).send('讀取統計資料失敗');
                     const summary = summaryRows[0] || { total_records: 0, today_records: 0 };
                     const totalPages = Math.ceil(result.total / filters.pageSize);
-                    res.render('admin-records', { users, records: result.records, recordsTotal: result.total, recordsPage: filters.page, recordsPageSize: filters.pageSize, recordFilters: filters, paginationItems: buildPaginationItems(totalPages, filters.page), summary: { totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, pageTitle: '血壓記錄', pageDescription: '依使用者、日期與血壓狀態篩選全部量測資料。', activePage: 'records', titleSuffix: process.env.TITLE_SUFFIX || '' });
+                    res.render('admin-records', { users, records: result.records, recordsTotal: result.total, recordsPage: filters.page, recordsPageSize: filters.pageSize, recordFilters: filters, paginationItems: buildPaginationItems(totalPages, filters.page), summary: { totalRecords: Number(summary.total_records) || 0, todayRecords: Number(summary.today_records) || 0 }, pageTitle: '血壓記錄', pageDescription: '篩選、編輯與匯出量測。', activePage: 'records', titleSuffix: process.env.TITLE_SUFFIX || '' });
                 });
             });
         });
     });
 
     router.get('/admin/export/records.csv', (req, res) => {
-        const filters = parseRecordFilters(req.query);
+        let filters;
+        try { filters = parseRecordFilters(req.query); } catch (error) { return res.status(400).send(error.message); }
         const direction = filters.sort === 'oldest' ? 'ASC' : 'DESC';
         const sql = `SELECT r.recorded_at, u.name AS user_name, r.high_pressure, r.low_pressure, r.heartbeat FROM records r LEFT JOIN users u ON u.id = r.user_id ${filters.where} ORDER BY r.recorded_at ${direction}, r.id ${direction} LIMIT ?`;
         const countSql = `SELECT COUNT(*) AS total FROM records r ${filters.where}`;
@@ -201,8 +192,14 @@ module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
             });
             res.on('drain', () => stream.resume());
             res.on('close', () => stream.destroy());
-            stream.on('end', () => res.end());
+            stream.on('end', async () => {
+                try {
+                    await writeAudit(db.promise(), actor, 'records.export', { count: Number(rows[0]?.total) || 0, details: { user: filters.userId, from: filters.from, to: filters.to, status: filters.status } });
+                    res.end();
+                } catch (error) { res.destroy(error); }
+            });
             stream.on('error', error => {
+                void writeFailure(db, actor, 'records.export', error);
                 if (!res.headersSent) return res.status(500).send('匯出失敗');
                 res.destroy(error);
             });
@@ -212,24 +209,26 @@ module.exports = function createAdminRouter(adminAuth, db = defaultDb) {
     router.get('/admin/backup', (req, res) => {
         db.query('SELECT id, name FROM users ORDER BY id ASC', (err, users) => {
             if (err) return res.status(500).send('讀取使用者資料失敗');
-            res.render('admin-backup', { users, pageTitle: '備份還原', pageDescription: '下載具 checksum 的 JSON 備份，匯入前可先預覽資料。', activePage: 'backup', titleSuffix: process.env.TITLE_SUFFIX || '' });
+            res.render('admin-backup', { users, pageTitle: '備份還原', pageDescription: '下載備份或預覽還原。', activePage: 'backup', titleSuffix: process.env.TITLE_SUFFIX || '' });
         });
     });
 
-    router.get('/admin/export/backup.json', (req, res, next) => {
-        db.query('SELECT id, name, color, created_at FROM users ORDER BY id ASC', (userErr, users) => {
-            if (userErr) return next(userErr);
-            db.query('SELECT id, high_pressure, low_pressure, heartbeat, recorded_at, user_id FROM records ORDER BY id ASC', (recordErr, records) => {
-                if (recordErr) return next(recordErr);
-                const now = new Date();
-                const backup = createBackup({ users, records, exportedAt: now.toISOString(), appVersion });
-                lastBackupAt = now;
-                const filename = `血壓記錄備份_${formatDateForFilename(now)}.json`;
-                res.setHeader('Content-Type', 'application/json; charset=utf-8');
-                res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
-                res.send(JSON.stringify(backup, null, 2));
+    router.get('/admin/export/backup.json', async (req, res, next) => {
+        try {
+            const now = new Date();
+            const backup = await withTransaction(db, async connection => {
+                const [users] = await connection.query('SELECT id, name, color, created_at FROM users ORDER BY id ASC');
+                const [records] = await connection.query('SELECT id, high_pressure, low_pressure, heartbeat, recorded_at, user_id FROM records ORDER BY id ASC');
+                const result = createBackup({ users, records, exportedAt: now.toISOString(), appVersion });
+                await connection.query('INSERT INTO backup_logs (actor, format, record_count, user_count, checksum) VALUES (?, ?, ?, ?, ?)', [actor, 'json', records.length, users.length, result.checksum]);
+                await writeAudit(connection, actor, 'backup.export', { count: records.length, details: { format: 'json', checksum: result.checksum } });
+                return result;
             });
-        });
+            const filename = '血壓記錄備份_' + formatDateForFilename(now) + '.json';
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.setHeader('Content-Disposition', "attachment; filename*=UTF-8''" + encodeURIComponent(filename));
+            res.send(JSON.stringify(backup, null, 2));
+        } catch (error) { await writeFailure(db, actor, 'backup.export', error); next(error); }
     });
 
 // SQL 匯出（備份）
@@ -282,7 +281,11 @@ router.get('/admin/export/sql', (req, res) => {
             const filename = `血壓記錄備份_${formatDateForFilename(new Date())}.sql`;
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
-            res.send(sql);
+            withTransaction(db, async connection => {
+                await connection.query('INSERT INTO backup_logs (actor, format, record_count, user_count, checksum) VALUES (?, ?, ?, ?, ?)', [actor, 'sql', records.length, users.length, null]);
+                await writeAudit(connection, actor, 'backup.export', { count: records.length, details: { format: 'sql' } });
+            }).then(() => res.send(sql)).catch(() => res.status(500).send('備份匯出紀錄寫入失敗'));
+
         });
     });
 });
@@ -295,42 +298,48 @@ router.get('/api/users', (req, res) => {
     });
 });
 
-// API: 新增使用者
-router.post('/api/users', (req, res) => {
+// 使用者變更與成功稽核使用同一個交易。
+async function changeUser(req, res, action) {
+    const id = req.params.id;
     const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
     const color = req.body.color || '#4CAF50';
-    if (!name) return res.status(400).json({ error: '請輸入名稱' });
-    if (name.length > 50) return res.status(400).json({ error: '名稱不可超過 50 個字元' });
-    if (!validColor(color)) return res.status(400).json({ error: '顏色格式無效' });
-    db.query('SELECT id FROM users WHERE name = ? LIMIT 1', [name], (lookupErr, existing) => {
-        if (lookupErr) return res.status(500).json({ error: '新增使用者失敗' });
-        if (existing.length) return res.status(409).json({ error: '使用者名稱已存在' });
-        db.query('INSERT INTO users (name, color) VALUES (?, ?)', [name, color], (err, result) => {
-            if (err) return res.status(500).json({ error: '新增使用者失敗' });
-            res.json({ id: result.insertId, name, color });
-        });
-    });
-});
-
-// API: 刪除使用者（連同記錄）
-router.delete('/api/users/:id', async (req, res) => {
-    const userId = req.params.id;
-    if (!validId(userId)) return res.status(400).json({ error: '使用者編號無效' });
     try {
-        await withTransaction(db, async connection => {
-            await connection.query('DELETE FROM records WHERE user_id = ?', [userId]);
-            const [result] = await connection.query('DELETE FROM users WHERE id = ?', [userId]);
-            if (!result.affectedRows) {
-                const error = new Error('找不到使用者');
-                error.statusCode = 404;
-                throw error;
+        if (action !== 'user.create' && !validId(id)) throw Object.assign(new Error('使用者編號無效'), { statusCode: 400 });
+        if (action !== 'user.delete' && (!name || name.length > 50 || !validColor(color))) throw Object.assign(new Error('請填寫有效姓名（最多 50 字）及識別色'), { statusCode: 400 });
+        const result = await withTransaction(db, async connection => {
+            let before = null, affected = 1;
+            if (action !== 'user.create') {
+                const [users] = await connection.query('SELECT * FROM users WHERE id = ? FOR UPDATE', [id]);
+                if (!users.length) throw Object.assign(new Error('找不到使用者'), { statusCode: 404 });
+                before = users[0];
             }
+            if (action !== 'user.delete') {
+                const [existing] = await connection.query('SELECT id FROM users WHERE name = ? AND id <> ? LIMIT 1', [name, id || 0]);
+                if (existing.length) throw Object.assign(new Error('使用者名稱已存在'), { statusCode: 409 });
+            }
+            let targetId = Number(id);
+            if (action === 'user.create') {
+                const [created] = await connection.query('INSERT INTO users (name, color) VALUES (?, ?)', [name, color]);
+                targetId = created.insertId;
+            } else if (action === 'user.edit') {
+                await connection.query('UPDATE users SET name = ?, color = ? WHERE id = ?', [name, color, id]);
+            } else {
+                const [deleted] = await connection.query('DELETE FROM records WHERE user_id = ?', [id]);
+                affected = deleted.affectedRows;
+                await connection.query('DELETE FROM users WHERE id = ?', [id]);
+            }
+            await writeAudit(connection, actor, action, { targetId, count: affected, details: { before, name: name || before?.name, color: action === 'user.delete' ? null : color } });
+            return { success: true, id: targetId, name, color };
         });
-        res.json({ success: true });
+        res.json(result);
     } catch (error) {
-        res.status(error.statusCode || 500).json({ error: error.statusCode === 404 ? error.message : '刪除使用者失敗' });
+        await writeFailure(db, actor, action, error, validId(id) ? Number(id) : null);
+        res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : '操作失敗，資料已回復' });
     }
-});
+}
+router.post('/api/users', (req, res) => changeUser(req, res, 'user.create'));
+router.put('/api/users/:id', (req, res) => changeUser(req, res, 'user.edit'));
+router.delete('/api/users/:id', (req, res) => changeUser(req, res, 'user.delete'));
 
 function readBackupUpload(req) {
     if (!req.files || !req.files.backupFile) throw Object.assign(new Error('請上傳 JSON 備份檔案'), { statusCode: 400 });
@@ -339,21 +348,17 @@ function readBackupUpload(req) {
     return parseBackup(upload.data.toString('utf8'));
 }
 
-async function prepareBackupImport(req) {
-    const targetUserId = Number.parseInt(req.body.user_id, 10);
-    if (!validId(targetUserId)) throw Object.assign(new Error('請選擇有效使用者'), { statusCode: 400 });
-    const [users] = await db.promise().query('SELECT id FROM users WHERE id = ? LIMIT 1', [targetUserId]);
-    if (!users.length) throw Object.assign(new Error('找不到指定使用者'), { statusCode: 400 });
-    const preview = previewBackup(readBackupUpload(req), targetUserId);
-    if (!preview.validRows.length) throw Object.assign(new Error('備份中沒有可匯入的有效記錄'), { statusCode: 400 });
-    if (preview.validRows.length > 5000) throw Object.assign(new Error('單次最多匯入 5000 筆記錄'), { statusCode: 413 });
-    return preview;
+async function prepareBackupImport(req, connection = db.promise(), lock = false) {
+    const mode = req.body.mode || 'single';
+    if (mode === 'single' && !validId(req.body.user_id)) throw Object.assign(new Error('請選擇有效使用者'), { statusCode: 400 });
+    return planImport(connection, readBackupUpload(req), mode, Number(req.body.user_id), lock);
 }
 
 router.post('/api/import-backup/preview', async (req, res) => {
     try {
         const preview = await prepareBackupImport(req);
-        res.json({ total: preview.total, valid: preview.validRows.length, skipped: preview.skipped, exportedAt: preview.exportedAt, sourceVersion: preview.sourceVersion });
+        const backup = readBackupUpload(req);
+        res.json({ total: preview.total, valid: preview.rows.length, skipped: preview.skipped, duplicates: preview.duplicates, users: preview.users.map(user => ({ name: user.name, targetId: user.targetId })), exportedAt: backup.exportedAt, sourceVersion: backup.appVersion });
     } catch (error) {
         res.status(error.statusCode || 400).json({ error: error.message });
     }
@@ -361,36 +366,17 @@ router.post('/api/import-backup/preview', async (req, res) => {
 
 router.post('/api/import-backup/confirm', async (req, res) => {
     try {
-        const preview = await prepareBackupImport(req);
-        await withTransaction(db, async connection => {
-            for (const row of preview.validRows) {
-                await connection.query('INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)', row);
-            }
+        const preview = await withTransaction(db, async connection => {
+            const plan = await prepareBackupImport(req, connection, true);
+            await applyImport(connection, plan);
+            await writeAudit(connection, actor, 'backup.import', { count: plan.rows.length, details: { mode: req.body.mode || 'single', users: plan.users.map(user => ({ id: user.targetId, name: user.name })), skipped: plan.skipped, duplicates: plan.duplicates } });
+            return plan;
         });
-        res.json({ success: true, imported: preview.validRows.length, skipped: preview.skipped });
+        res.json({ success: true, imported: preview.rows.length, skipped: preview.skipped + preview.duplicates });
     } catch (error) {
+        await writeFailure(db, actor, 'backup.import', error);
         res.status(error.statusCode || 400).json({ error: error.statusCode ? error.message : '匯入失敗，資料已回復' });
     }
-});
-
-// API: 編輯使用者
-router.put('/api/users/:id', (req, res) => {
-    const userId = req.params.id;
-    const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
-    const { color } = req.body;
-    if (!validId(userId)) return res.status(400).json({ error: '使用者編號無效' });
-    if (!name) return res.status(400).json({ error: '請輸入名稱' });
-    if (name.length > 50) return res.status(400).json({ error: '名稱不可超過 50 個字元' });
-    if (!validColor(color)) return res.status(400).json({ error: '顏色格式無效' });
-    db.query('SELECT id FROM users WHERE name = ? AND id <> ? LIMIT 1', [name, userId], (lookupErr, existing) => {
-        if (lookupErr) return res.status(500).json({ error: '更新使用者失敗' });
-        if (existing.length) return res.status(409).json({ error: '使用者名稱已存在' });
-        db.query('UPDATE users SET name = ?, color = ? WHERE id = ?', [name, color, userId], (err, result) => {
-            if (err) return res.status(500).json({ error: '更新使用者失敗' });
-            if (!result.affectedRows) return res.status(404).json({ error: '找不到使用者' });
-            res.json({ success: true });
-        });
-    });
 });
 
 // API: 匯入 SQL
@@ -439,8 +425,10 @@ router.post('/api/import-sql', async (req, res) => {
           for (const row of rows) {
               await connection.query('INSERT INTO records (high_pressure, low_pressure, heartbeat, recorded_at, user_id) VALUES (?, ?, ?, ?, ?)', row);
           }
+          await writeAudit(connection, actor, 'backup.import', { targetId: targetUserId, count: rows.length, details: { format: 'legacy-sql' } });
       });
     } catch (error) {
+      await writeFailure(db, actor, 'backup.import', error, targetUserId);
       return res.status(400).send('匯入失敗，資料已回復，請檢查 SQL 內容');
     }
 

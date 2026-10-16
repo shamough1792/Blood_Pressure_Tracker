@@ -13,13 +13,14 @@ test('管理總覽計算最近量測與七日狀態比例', () => {
     assert.equal(overview.sevenDay.highRate, 50);
     assert.equal(overview.sevenDay.normalRate, 50);
     assert.equal(overview.sevenDay.lowRate, 0);
+    assert.equal(overview.alerts.length, 1);
+    assert.equal(overview.alerts[0].day, '2026-09-25');
+    assert.equal(overview.userRates[0].userName, '乙');
+    assert.equal(overview.userRates[0].highRate, 100);
 });
 
 test('沒有記錄時回傳可直接渲染的空狀態', () => {
-    assert.deepEqual(buildAdminOverview([], '2026-09-25T12:00:00Z'), {
-        latest: null,
-        sevenDay: { total: 0, highRate: 0, normalRate: 0, lowRate: 0 }
-    });
+    assert.deepEqual(buildAdminOverview([], '2026-09-25T12:00:00Z'), { latest: null, sevenDay: { total: 0, highRate: 0, normalRate: 0, lowRate: 0 }, alerts: [], userRates: [] });
 });
 
 test('管理總覽查詢可限制指定使用者的七日記錄及最近量測', () => {

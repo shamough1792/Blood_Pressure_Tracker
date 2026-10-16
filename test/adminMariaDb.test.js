@@ -1,0 +1,102 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const mysql = require('mysql2');
+const { createApp } = require('../app');
+const { createAdminAuth } = require('../middleware/adminAuth');
+const { runMigrations } = require('../lib/migrations');
+
+test('獨立 MariaDB 驗證升級、篩選匯出、備份往返及稽核交易', { skip: !process.env.BP_ADMIN_TEST_PORT }, async t => {
+    // 僅允許明確指定的本機暫存測試資料庫，不使用應用程式的 DB_* 設定。
+    const port = Number(process.env.BP_ADMIN_TEST_PORT);
+    assert.ok(Number.isInteger(port) && port > 1024 && port < 65536);
+    const pool = mysql.createPool({ host: '127.0.0.1', port, user: 'root', password: '', database: 'bp_admin_test', multipleStatements: true, timezone: '+08:00', connectionLimit: 3 });
+    pool.on('connection', connection => connection.query("SET time_zone = '+08:00'"));
+    t.after(() => pool.promise().end());
+    const db = pool.promise();
+    await db.query(fs.readFileSync('mariadb/init.sql', 'utf8'));
+    await db.query('DROP TRIGGER IF EXISTS fail_success_audit; DELETE FROM records; DELETE FROM users WHERE id <> 1; DELETE FROM admin_audit_logs; DELETE FROM backup_logs');
+    await db.query(fs.readFileSync('mariadb/migration-003-admin-management.sql', 'utf8'));
+    await db.query(fs.readFileSync('mariadb/migration-004-database-backup-reports.sql', 'utf8'));
+    const silent = { info() {} };
+    const firstMigrations = await runMigrations(pool, { logger: silent });
+    assert.ok(firstMigrations.length === 0 || firstMigrations.length === 4);
+    assert.deepEqual(await runMigrations(pool, { logger: silent }), []);
+    // 模擬舊部署尚未套用 004，再由兩個服務同時啟動。
+    await db.query("DROP TABLE database_backup_reports; DELETE FROM schema_migrations WHERE name = 'migration-004-database-backup-reports.sql'");
+    const upgrades = await Promise.all([runMigrations(pool, { logger: silent }), runMigrations(pool, { logger: silent })]);
+    assert.equal(upgrades.flat().filter(name => name === 'migration-004-database-backup-reports.sql').length, 1);
+    const [[defaultUsers]] = await db.query("SELECT COUNT(*) AS total FROM users WHERE id = 1");
+    assert.equal(defaultUsers.total, 1);
+    await db.query(fs.readFileSync('mariadb/migration-004-database-backup-reports.sql', 'utf8'));
+    await db.query(fs.readFileSync('mariadb/migration-003-admin-management.sql', 'utf8'));
+    const [created] = await db.query('INSERT INTO users (name, color) VALUES (?, ?)', ['真實資料庫測試', '#336699']);
+    const userId = created.insertId;
+    const [createdRecord] = await db.query('INSERT INTO records (user_id, high_pressure, low_pressure, heartbeat, recorded_at) VALUES (?, 145, 92, 80, ?)', [userId, new Date('2026-10-16T00:00:00Z')]);
+    for (let i = 0; i < 55; i++) await db.query('INSERT INTO records (user_id, high_pressure, low_pressure, heartbeat, recorded_at) VALUES (?, 120, 80, 70, ?)', [userId, new Date(`2026-10-15T00:${String(i).padStart(2, '0')}:00Z`)]);
+    const auth = createAdminAuth({ username: 'admin', password: 'test', sessionSecret: 'mariadb-test-only' });
+    const token = auth.issueToken();
+    const server = createApp({ db: pool, adminAuth: auth }).listen(0, '127.0.0.1');
+    await new Promise(resolve => server.once('listening', resolve));
+    t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
+    async function request(path, method = 'GET', body) {
+        const response = await fetch(`http://127.0.0.1:${server.address().port}${path}`, { method, redirect: 'manual', headers: { cookie: `admin_session=${token}`, 'x-csrf-token': auth.createCsrfToken(token), ...(body && !(body instanceof FormData) ? { 'content-type': 'application/json' } : {}) }, body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined });
+        return { status: response.status, text: await response.text() };
+    }
+    const filtered = await request(`/admin/records?user=${userId}&status=high&from=2026-10-16&to=2026-10-16`);
+    assert.equal(filtered.status, 200);
+    assert.match(filtered.text, /共 1 筆/);
+    assert.doesNotMatch(filtered.text, /data-status="normal"/);
+    const csv = await request(`/admin/export/records.csv?user=${userId}&status=high`);
+    assert.equal(csv.status, 200);
+    assert.equal(csv.text.trim().split('\n').length, 2);
+    const page = await request('/admin/records?page=999999');
+    assert.match(page.text, /第 51-56 筆，共 56 筆/);
+    assert.equal((await request('/admin/records?from=2026-02-30')).status, 400);
+    const backup = await request('/admin/export/backup.json');
+    assert.equal(backup.status, 200);
+    const json = JSON.parse(backup.text);
+    function form() { const body = new FormData(); body.append('mode', 'full'); body.append('backupFile', new Blob([backup.text]), 'backup.json'); return body; }
+    const preview = await request('/api/import-backup/preview', 'POST', form());
+    assert.equal(preview.status, 200);
+    assert.equal(JSON.parse(preview.text).duplicates, 56);
+    const confirmed = await request('/api/import-backup/confirm', 'POST', form());
+    assert.equal(confirmed.status, 200);
+    assert.equal(JSON.parse(confirmed.text).imported, 0);
+    const [[lastBackup]] = await db.query('SELECT * FROM backup_logs ORDER BY id DESC LIMIT 1');
+    assert.equal(lastBackup.checksum, json.checksum);
+    const edit = await request(`/api/records/${createdRecord.insertId}`, 'PUT', { high_pressure: 130, low_pressure: 80, heartbeat: 70, recorded_at: '2026-10-16T01:00:00.000Z', reason: '測試修改', expected_at: '2026-10-16T00:00:00.000Z', expected_high: 145, expected_low: 92, expected_heart: 80 });
+    assert.equal(edit.status, 200);
+    const [[record]] = await db.query('SELECT * FROM records WHERE id = ?', [createdRecord.insertId]);
+    assert.equal(record.recorded_at.toISOString(), '2026-10-16T01:00:00.000Z');
+    assert.equal((await request('/admin/activity')).status, 200);
+    const report = await request('/api/database-backups', 'POST', { source: '隔離測試備份', completed_at: new Date(Date.now() - 60000).toISOString(), status: 'success', reference: 'test.sql.gz' });
+    assert.equal(report.status, 201);
+    const [[savedReport]] = await db.query('SELECT * FROM database_backup_reports ORDER BY id DESC LIMIT 1');
+    assert.equal(savedReport.reference, 'test.sql.gz');
+    const previewDelete = await request('/api/records/delete-preview', 'POST', { ids: [createdRecord.insertId] });
+    assert.equal(previewDelete.status, 200);
+    assert.equal(JSON.parse(previewDelete.text).records[0].user_name, '真實資料庫測試');
+    // 以真實 trigger 模擬成功稽核失敗，確認 DELETE 不會留下部分結果。
+    await db.query("CREATE TRIGGER fail_success_audit BEFORE INSERT ON admin_audit_logs FOR EACH ROW BEGIN IF NEW.status = 'success' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'test audit failure'; END IF; END");
+    const failed = await request(`/api/records/${createdRecord.insertId}`, 'DELETE', { reason: '測試回復' });
+    assert.equal(failed.status, 500);
+    const [[remaining]] = await db.query('SELECT COUNT(*) AS total FROM records WHERE id = ?', [createdRecord.insertId]);
+    assert.equal(remaining.total, 1);
+    await db.query('DROP TRIGGER fail_success_audit');
+    assert.equal((await request(`/api/records/${createdRecord.insertId}`, 'DELETE', { reason: '測試刪除' })).status, 200);
+    // 獨立舊版 schema：重啟升級不重複建立預設使用者，保留原量測資料。
+    await db.query('DROP DATABASE IF EXISTS bp_migration_legacy_test; CREATE DATABASE bp_migration_legacy_test');
+    const legacyPool = mysql.createPool({ host: '127.0.0.1', port, user: 'root', password: '', database: 'bp_migration_legacy_test', multipleStatements: true });
+    t.after(() => legacyPool.promise().end());
+    await legacyPool.promise().query('CREATE TABLE records (id INT AUTO_INCREMENT PRIMARY KEY, high_pressure INT NOT NULL, low_pressure INT NOT NULL, heartbeat INT NOT NULL, recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); INSERT INTO records (high_pressure, low_pressure, heartbeat) VALUES (120, 80, 70)');
+    assert.equal((await runMigrations(legacyPool, { logger: silent })).length, 4);
+    assert.deepEqual(await runMigrations(legacyPool, { logger: silent }), []);
+    const [[legacyRecord]] = await legacyPool.promise().query('SELECT * FROM records');
+    assert.equal(legacyRecord.high_pressure, 120);
+    assert.equal(legacyRecord.user_id, 1);
+    const [[legacyUserCount]] = await legacyPool.promise().query('SELECT COUNT(*) AS total FROM users');
+    assert.equal(legacyUserCount.total, 1);
+    const [foreignKeys] = await legacyPool.promise().query("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'records' AND REFERENCED_TABLE_NAME = 'users'");
+    assert.equal(foreignKeys.length, 1);
+});
